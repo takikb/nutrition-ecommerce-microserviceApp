@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    // 1. PROJECT STRUCTURE (Recommended to uncomment these)
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // 2. MODULE SETTINGS (Crucial for Express + ts-node-dev)
+    "module": "commonjs",             /* Changed from 'nodenext' to 'commonjs' */
+    "moduleResolution": "node",       /* standard node resolution */
+    "target": "es2020",               /* 'esnext' is fine, but 2020 is stable */
+    
+    // 3. INTEROP (The magic setting for 'import express from express')
+    "esModuleInterop": true,          /* Must be true to allow default imports */
+
+    // 4. TYPES
+    // "types": ["node"],             /* Uncomment if you use global 'process' etc */
+
+    // 5. OTHER OUTPUTS
+    "sourceMap": true,
+    
+    // 6. STRICTNESS
+    "strict": true,
+    "skipLibCheck": true,             /* Skips checking inside node_modules */
+
+    // 7. SETTINGS TO REMOVE/FALSE
+    // "verbatimModuleSyntax": false, /* Disable this. It conflicts with easy imports */
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

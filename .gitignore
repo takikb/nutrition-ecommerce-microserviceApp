@@ -1,0 +1,21 @@
+# Node
+node_modules/
+npm-debug.log
+dist/
+build/
+
+# Python 
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.pytest_cache/
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# K8s & Skaffold overrides
+.skaffold/

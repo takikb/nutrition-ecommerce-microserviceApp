@@ -1,0 +1,8 @@
+# Set default behavior
+* text=auto
+
+# Force Docker, K8s, and config files to ALWAYS use Linux endings (LF)
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.json text eol=lf

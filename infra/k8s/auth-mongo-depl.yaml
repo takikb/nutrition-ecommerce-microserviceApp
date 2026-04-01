@@ -1,0 +1,48 @@
+apiVersion : apps/v1
+kind : Deployment
+metadata :
+  name : auth-mongo-depl
+spec :
+  replicas : 1
+  selector :
+    matchLabels :
+      app : auth-mongo
+  template :
+    metadata :
+      labels :
+        app : auth-mongo
+    spec :
+      containers :
+          # 1. Main MongoDB Container (Running as a Replica Set)
+        - name : auth-mongo
+          image : mongo
+          command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+          ports :
+            - containerPort : 27017
+
+          # 2. Sidecar Container (Auto-initiates the Replica Set)
+        - name: mongo-init-replica
+          image: mongo
+          command:
+            - "bash"
+            - "-c"
+            - |
+              echo "Waiting for MongoDB to start..."
+              sleep 5
+              mongosh --host localhost:27017 --eval 'rs.initiate({_id: "rs0", members:[{_id: 0, host: "auth-mongo-srv:27017"}]})' || true
+              echo "Replica set initialized!"
+
+---
+
+apiVersion : v1
+kind : Service
+metadata :
+  name : auth-mongo-srv
+spec :
+  selector :  #find the pod with label app=auth-mongo
+    app : auth-mongo
+  ports :
+    - name : auth-mongo-db
+      protocol : TCP
+      port : 27017
+      targetPort : 27017
