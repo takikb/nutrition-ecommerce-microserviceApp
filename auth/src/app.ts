@@ -16,7 +16,7 @@ app.set('trust proxy', true) // trust traffic from ingress-nginx
 app.use(json())
 app.use(cookieSession({
     signed: false,
-    secure: true
+    secure: process.env.NODE_ENV !== 'test' // only use secure cookies in production and development
 }))
 
 app.use(currentUserRouter)
