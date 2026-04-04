@@ -3,10 +3,8 @@ import express, {Request, Response} from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '../models/user';
-import { Gender, PrimaryHealthGoals, ActivityLevel } from '../models/health-profile';
 
 import { User } from '../models/user';
-import { HealthProfile } from '../models/health-profile';
 import { BadRequestError } from '../errors/bad-request-error';
 import { validateRequest } from '../middlewares/validate-request';
 
@@ -26,54 +24,6 @@ router.post('/api/users/signup', [
     body('role')
         .isIn([UserRole.CUSTOMER, UserRole.VENDOR])
         .withMessage('Invalid role specified'),
-    
-        // Optional fields for health profile
-    body('healthData')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .notEmpty()
-        .withMessage('Health data is required for customers'),
-
-    body('healthData.gender')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .isIn(Object.values(Gender))
-        .withMessage('Invalid gender specified'),
-
-    body('healthData.dateOfBirth')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .isISO8601()
-        .withMessage('Date of birth must be a valid date'),
-
-    body('healthData.heightCM')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .isFloat({ min: 50, max: 250 })
-        .withMessage('Height must be a valid number in cm between 50 and 250'),
-
-    body('healthData.weightKG')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .isFloat({ min: 30, max: 300 })
-        .withMessage('Weight must be a valid number in kg between 30 and 300'),
-
-    body('healthData.primaryHealthGoal')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .isIn(Object.values(PrimaryHealthGoals))
-        .withMessage('Invalid primary health goal specified'),
-
-    body('healthData.medicalConditions')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .optional()
-        .isArray()
-        .withMessage('Medical conditions must be an array of strings'),
-
-    body('healthData.allergies')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .optional()
-        .isArray()
-        .withMessage('Allergies must be an array of strings'),
-
-    body('healthData.activityLevel')
-        .if(body('role').equals(UserRole.CUSTOMER))
-        .isIn(Object.values(ActivityLevel))
-        .withMessage('Invalid activity level specified')
     ], 
     validateRequest,
     async (req: Request, res: Response) => {
@@ -83,54 +33,19 @@ router.post('/api/users/signup', [
     const existingUser = await User.findOne({ email })
 
     if (existingUser) {
-        console.log('Email in use')
         throw new BadRequestError('Email in use')
     }
 
     const user = User.build({ email, password, fullName, role })
+    await user.save()
 
-    let healthProfile = null
-    
-    // This ensures if HealthProfile fails, User is NEVER saved.
-    const session = await mongoose.startSession()
-    session.startTransaction()
 
-    try {
-        await user.save({ session})
-
-        if (role === UserRole.CUSTOMER) {
-            healthProfile = HealthProfile.build({
-                userId: user._id.toString(),
-                gender: healthData.gender,
-                dateOfBirth: healthData.dateOfBirth,
-                heightCM: healthData.heightCM,
-                weightKG: healthData.weightKG,
-                primaryHealthGoal: healthData.primaryHealthGoal,
-                medicalConditions: healthData.medicalConditions || [],
-                allergies: healthData.allergies || [],
-                activityLevel: healthData.activityLevel
-
-            })
-
-            await healthProfile.save({ session })
-        }
-
-        await session.commitTransaction()
-
-    } catch (error) {
-        await session.abortTransaction()
-        console.log("Signup transaction error : ", error)
-        throw new BadRequestError('Error creating user and health profile')
-    } finally {
-        session.endSession()
-    }
-
-    
     // Generate JWT
     const userJwt = jwt.sign({
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isProfileComplete: role === UserRole.CUSTOMER ? false : undefined
     }, process.env.JWT_KEY! )
 
     // Store it on session object
@@ -138,8 +53,12 @@ router.post('/api/users/signup', [
         jwt: userJwt
     }
 
-    res.status(201).send({ user, healthProfile });
-
+    res.status(201).send({
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role
+    })
 });
 
 export { router as signupRouter };

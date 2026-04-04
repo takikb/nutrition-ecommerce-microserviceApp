@@ -5,6 +5,7 @@ import { BadRequestError } from '../errors/bad-request-error';
 import { Password } from '../services/password';
 import { validateRequest } from '../middlewares/validate-request';
 import jwt from 'jsonwebtoken';
+import { idText } from 'typescript';
 
 const router = express.Router();
 
@@ -47,7 +48,12 @@ router.post('/api/users/signin',
         jwt: userJWT
     }
 
-    res.status(200).send(existingUser);
+    res.status(200).send({
+        id: existingUser._id,
+        email: existingUser.email,
+        fullName: existingUser.fullName,
+        role: existingUser.role
+    });
 });
 
 export { router as signinRouter };

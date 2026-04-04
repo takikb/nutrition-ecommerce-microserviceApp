@@ -1,43 +1,7 @@
-import request from 'supertest'
-import { app } from '../../app'
+import request from 'supertest';
+import { app } from '../../app';
 
-it('returns a 201 on successful signup', async () => {
-    return request(app)
-        .post('/api/users/signup')
-        .send({
-            email: 'test@test.com',
-            password: 'password',
-            fullName: 'taki',
-            role: 'vendor'
-        })
-        .expect(201)
-})
-
-it('return a 400 with an invalid email', async () => {
-    return request(app)
-        .post('/api/users/signup')
-        .send({
-            email: 'testtest.com',
-            password: 'password',
-            fullName: 'taki',
-            role: 'vendor'
-        })
-        .expect(400)
-})
-
-it('return a 400 with a short password', async () => {
-    return request(app)
-        .post('/api/users/signup')
-        .send({
-            email: 'test@test.com',
-            password: 'pas',
-            fullName: 'taki',
-            role: 'vendor'
-        })
-        .expect(400)
-})
-
-it('return a 400 when trying to sign up with a duplicate email', async () => {
+it('returns a 200 on successful signin', async () => {
     await request(app)
         .post('/api/users/signup')
         .send({
@@ -47,7 +11,30 @@ it('return a 400 when trying to sign up with a duplicate email', async () => {
             role: 'vendor'
         })
         .expect(201)
-        
+    
+    await request(app)
+        .post('/api/users/signin')
+        .send({
+            email: 'test@test.com',
+            password: 'password',
+            role: 'vendor'
+        })
+        .expect(200)
+
+})
+
+it('returns a 400 with an invalid email', async () => {
+    await request(app)
+        .post('/api/users/signin')
+        .send({
+            email: 'invalid@test.com',
+            password: 'password',
+            role: 'vendor'
+        })
+        .expect(400)
+})
+
+it('returns a 400 with wrong password or role', async () => {
     await request(app)
         .post('/api/users/signup')
         .send({
@@ -56,39 +43,46 @@ it('return a 400 when trying to sign up with a duplicate email', async () => {
             fullName: 'taki',
             role: 'vendor'
         })
-        .expect(400)
-})
+        .expect(201)
 
-it('return a 400 when missing email or password', async () => {
     await request(app)
-        .post('/api/users/signup')
+        .post('/api/users/signin')
         .send({
-            password: 'password',
-            fullName: 'taki',
+            email: 'test@test.com',
+            password: 'wrongpassword',
             role: 'vendor'
         })
         .expect(400)
+    
+    await request(app)
+        .post('/api/users/signin')
+        .send({
+            email: 'test@test.com',
+            password: 'password',
+            role: 'customer'
+        })
+        .expect(400)
+})
 
+it('sets a cookie after successful signin', async () => {
     await request(app)
         .post('/api/users/signup')
         .send({
             email: 'test@test.com',
+            password: 'password',
             fullName: 'taki',
             role: 'vendor'
         })
-        .expect(400) 
-})
-
-it('sets a cookie after successful signup', async () => {
+        .expect(201)
+    
     const response = await request(app)
-        .post('/api/users/signup')
+        .post('/api/users/signin')
         .send({
             email: 'test@test.com',
             password: 'password',
-            fullName: 'taki',
             role: 'vendor'
         })
-        .expect(201)
+        .expect(200)
         
-    expect(response.get('Set-Cookie')).toBeDefined()
-    })
+    expect(response.get('Set-Cookie')).toBeDefined();
+})
