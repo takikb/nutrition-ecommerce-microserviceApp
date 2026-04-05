@@ -5,7 +5,6 @@ import { BadRequestError } from '../errors/bad-request-error';
 import { Password } from '../services/password';
 import { validateRequest } from '../middlewares/validate-request';
 import jwt from 'jsonwebtoken';
-import { idText } from 'typescript';
 
 const router = express.Router();
 

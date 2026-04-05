@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import express, {Request, Response} from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
