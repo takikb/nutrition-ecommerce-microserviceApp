@@ -5,18 +5,24 @@
     "outDir": "./dist",
 
     // 2. MODULE SETTINGS (Crucial for Express + ts-node-dev)
-    "module": "commonjs",             /* Changed from 'nodenext' to 'commonjs' */
-    "moduleResolution": "node",       /* standard node resolution */
+    "module": "commonjs",               /* Changed from 'nodenext' to 'commonjs' */
+    "moduleResolution": "node",     /* standard node resolution */
     "target": "es2020",               /* 'esnext' is fine, but 2020 is stable */
     
+
     // 3. INTEROP (The magic setting for 'import express from express')
     "esModuleInterop": true,          /* Must be true to allow default imports */
+
+    // It loads Jest globals for the whole project
+    "types": ["jest", "node"], 
+
 
     // 4. TYPES
     // "types": ["node"],             /* Uncomment if you use global 'process' etc */
 
     // 5. OTHER OUTPUTS
     "sourceMap": true,
+    "ignoreDeprecations": "6.0",
     
     // 6. STRICTNESS
     "strict": true,
