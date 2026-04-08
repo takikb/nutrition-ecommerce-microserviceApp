@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from 'mongodb-memory-server'
+import { MongoMemoryReplSet, MongoMemoryServer } from 'mongodb-memory-server'
 import mongoose from 'mongoose'
 import { app } from "../app"
 import request from 'supertest';
@@ -11,7 +11,7 @@ let mongo: any;
 beforeAll(async () => {
     process.env.JWT_KEY = "qsdfqsdf"
 
-    mongo = await MongoMemoryServer.create()
+    mongo = await MongoMemoryReplSet.create()
     const mongoUri = mongo.getUri()
     
     await mongoose.connect(mongoUri)
@@ -36,11 +36,19 @@ global.getAuthCookie = async () => {
     const password = 'password';
     const fullName = 'Test User';
     const role = 'vendor';
+    const vendorData = {
+        displayName: 'Test Vendor',
+        phoneNumber: '1234567890',
+        location: {
+            address: '123 Test St',
+            city: 'Testville'
+        }
+    };
 
     const response = await request(app)
         .post('/api/users/signup')
         .send({
-            email, password, fullName, role
+            email, password, fullName, role, vendorData
         })
         .expect(201)
 

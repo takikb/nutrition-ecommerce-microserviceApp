@@ -43,6 +43,7 @@ interface HealthProfileDoc extends mongoose.Document {
     weightKG: number
     calculatedBMI: number
     calculatedBMR: number
+    claculatedTDEE: number
     primaryHealthGoal: PrimaryHealthGoals
     medicalConditions?: string[]
     allergies?: string[]
@@ -81,6 +82,9 @@ const healthProfileSchema = new mongoose.Schema({
     calculatedBMR: {
         type: Number
     },
+    claculatedTDEE: {
+        type: Number
+    },
     primaryHealthGoal: {
         type: String,
         enum: Object.values(PrimaryHealthGoals),
@@ -112,18 +116,33 @@ const healthProfileSchema = new mongoose.Schema({
 });
 
 healthProfileSchema.pre('save', function () {
-    if (this.isModified('heightCM') || this.isModified('weightKG') || this.isModified('dateOfBirth')) {
-        // Calculate BMI
-        const heightM = this.get('heightCM') / 100;
-        this.set('calculatedBMI', parseFloat((this.get('weightKG') / (heightM * heightM)).toFixed(2)));
+    if (this.isModified('heightCM') || this.isModified('weightKG') || this.isModified('dateOfBirth') || this.isModified('activityLevel')) {
 
-        // Calculate BMR using Mifflin-St Jeor Equation
-        const age = Math.floor((Date.now() - this.get('dateOfBirth').getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+        const weight = this.get('weightKG');
+        const height = this.get('heightCM');
+        const dateOfBirth = this.get('dateOfBirth');
 
-        let bmr = (10 * this.get('weightKG')) + (6.25 * this.get('heightCM')) - (5 * age);
+        // 1. BMI
+        const heightM = height / 100;
+        this.set('calculatedBMI', parseFloat((weight / (heightM * heightM)).toFixed(2)));
+
+        // 2. age
+        const age = Math.floor((Date.now() - dateOfBirth.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+
+        // 3. BMR (Mifflin-St Jeor)
+        let bmr = (10 * weight) + (6.25 * height) - (5 * age);
         bmr = this.get('gender') === Gender.MALE ? bmr + 5 : bmr - 161;
-
         this.set('calculatedBMR', Math.round(bmr));
+
+        // 4. TDEE (Total Daily Energy Expenditure)
+        const multipliers: Record<ActivityLevel, number> = {
+            [ActivityLevel.SEDENTARY]: 1.2,
+            [ActivityLevel.LIGHTLY_ACTIVE]: 1.375,
+            [ActivityLevel.MODERATELY_ACTIVE]: 1.55,
+            [ActivityLevel.VERY_ACTIVE]: 1.725
+        };
+        const tdee = bmr * multipliers[this.get('activityLevel')];
+        this.set('claculatedTDEE', Math.round(tdee));
     }
 })
 
