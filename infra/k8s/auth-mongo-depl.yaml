@@ -30,6 +30,7 @@ spec :
               sleep 5
               mongosh --host localhost:27017 --eval 'rs.initiate({_id: "rs0", members:[{_id: 0, host: "auth-mongo-srv:27017"}]})' || true
               echo "Replica set initialized!"
+              sleep infinity
 
 ---
 
