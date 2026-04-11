@@ -8,7 +8,15 @@ it('clears the cookie after signing out', async () => {
       email: 'test@test.com',
       password: 'password',
       fullName: 'taki',
-      role: 'vendor'
+      role: 'vendor',
+      vendorData: {
+        displayName: 'taki',
+        phoneNumber: '1234567890',
+        location: {
+          address: '123 Ali Mendjeli',
+          city: 'Constantine'
+        }
+      }
     })
     .expect(201)
 

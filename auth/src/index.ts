@@ -7,7 +7,7 @@ const start = async () => {
   }
 
   try {
-    await mongoose.connect('mongodb://auth-mongo-srv:27017/auth')
+    await mongoose.connect('mongodb://auth-mongo-srv:27017/auth?replicaSet=rs0')
     console.log('Connected to MongoDB')
   } catch (error) {
     console.error('Error connecting to MongoDB:', error)
