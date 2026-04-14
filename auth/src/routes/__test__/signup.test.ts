@@ -14,7 +14,7 @@ it('returns a 201 on successful signup', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -34,7 +34,7 @@ it('return a 400 with an invalid email', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -54,7 +54,7 @@ it('return a 400 with a short password', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -74,7 +74,7 @@ it('return a 400 when trying to sign up with a duplicate email', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -92,7 +92,7 @@ it('return a 400 when trying to sign up with a duplicate email', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -111,7 +111,7 @@ it('return a 400 when missing email or password', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -128,7 +128,7 @@ it('return a 400 when missing email or password', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -148,7 +148,7 @@ it('return a 400 when missing required data for vendor or customer role', async 
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
@@ -185,7 +185,7 @@ it('sets a cookie after successful signup', async () => {
                 phoneNumber: '1234567890',
                 location: {
                     address: '123 Ali Mendjeli',
-                    city: 'Constantine'
+                    wilaya: 'Constantine'
                 }
             }
         })
