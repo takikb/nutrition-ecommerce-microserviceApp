@@ -5,7 +5,6 @@ interface VendorProfileAttrs {
     displayName: string
     bio?: string
     phoneNumber: string
-    whatsappNumber?: string
     location: {
         address: string
         wilaya: string
@@ -21,7 +20,6 @@ interface VendorProfileDoc extends mongoose.Document {
     displayName: string
     bio?: string
     phoneNumber: string
-    whatsappNumber?: string
     location: {
         address: string
         wilaya: string
@@ -53,9 +51,6 @@ const vendorProfileSchema = new mongoose.Schema({
     phoneNumber: {
         type: String,
         required: true,
-    },
-    whatsappNumber: {
-        type: String,
     },
     location: {
         address: {

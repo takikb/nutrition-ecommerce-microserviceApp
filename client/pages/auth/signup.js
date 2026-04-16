@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from 'axios';
-import Router from 'next/router';
+import Router from "next/router";
+import useRequest from "../../hooks/use-request";
 
 const MEDICAL_CONDITIONS = [
     { value: 'diabetes_type_1', label: 'Diabetes Type 1' },
@@ -60,7 +60,11 @@ const COUNTRY_CODES = [
 
 export default function Signup() {
     const [step, setStep] = useState(1);
-    const [errors, setErrors] = useState(null);
+    const { doRequest, errors } = useRequest({
+        url: '/api/users/signup',
+        method: 'post',
+        onSuccess: () => Router.push('/')
+    });
 
     // Identity Data
     const [email, setEmail] = useState('');
@@ -80,6 +84,7 @@ export default function Signup() {
 
     // Vendor Data
     const [displayName, setDisplayName] = useState('');
+    const [bio, setBio] = useState('');
     const [countryCode, setCountryCode] = useState('+213');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [address, setAddress] = useState('');
@@ -111,55 +116,37 @@ export default function Signup() {
 
     const onSubmitFinal = async (event) => {
         event.preventDefault();
-        setErrors(null);
 
-        try {
-            const payload = { email, password, fullName, role };
+        const payload = { email, password, fullName, role };
 
-            if (role === 'customer') {
-                payload.healthData = {
-                    gender,
-                    dateOfBirth,
-                    heightCM: parseFloat(heightCM),
-                    weightKG: parseFloat(weightKG),
-                    activityLevel,
-                    primaryHealthGoal,
-                    medicalCondition, 
-                    allergy           
-                };
-            } else if (role === 'vendor') {
+        if (role === 'customer') {
+            payload.healthData = {
+                gender,
+                dateOfBirth,
+                heightCM: parseFloat(heightCM),
+                weightKG: parseFloat(weightKG),
+                activityLevel,
+                primaryHealthGoal,
+                medicalCondition, 
+                allergy           
+            };
+        } else if (role === 'vendor') {
                 
-                // Remove spaces, dashes, and leading zero
-                let cleanPhone = phoneNumber.replace(/[\s-]/g, '');
-                if (cleanPhone.startsWith('0')) {
-                    cleanPhone = cleanPhone.substring(1);
-                }
-
-                payload.vendorData = {
-                    displayName,
-                    phoneNumber: `${countryCode}${phoneNumber}`,
-                    bio: '',
-                    location: { address, wilaya }
-                };
+            // Remove spaces, dashes, and leading zero
+            let cleanPhone = phoneNumber.replace(/[\s-]/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = cleanPhone.substring(1);
             }
 
-            const response = await axios.post('/api/users/signup', payload);
-            console.log(response.data);
-            
-            Router.push('/');
+            payload.vendorData = {
+                displayName,
+                phoneNumber: `${countryCode}${phoneNumber}`,
+                bio,
+                location: { address, wilaya }
+            };
+        } 
 
-        } catch (err) {
-            setErrors(
-                <div className="alert alert-danger mt-3">
-                    <h4>Ooops....</h4>
-                    <ul className="my-0">
-                        {err.response.data.errors.map(e => (
-                            <li key={e.message}>{e.message}</li>
-                        ))}
-                    </ul>
-                </div>
-            );
-        }
+        await doRequest(payload)
     };
 
     return (
@@ -294,6 +281,18 @@ export default function Signup() {
                     <div className="form-group mt-2">
                         <label>Store/Display Name</label>
                         <input value={displayName} onChange={e => setDisplayName(e.target.value)} className='form-control' required />
+                    </div>
+                    <div className="form-group mt-2">
+                        <label>Bio (Optional)</label>
+                        <textarea 
+                            value={bio} 
+                            onChange={e => setBio(e.target.value.substring(0, 500))} 
+                            className='form-control' 
+                            maxLength='500'
+                            placeholder='Tell us about your store...'
+                            rows='4'
+                        />
+                        <small className='form-text text-muted'>{bio.length}/500 characters</small>
                     </div>
                     <div className="form-group mt-2">
                         <label>Phone Number</label>
