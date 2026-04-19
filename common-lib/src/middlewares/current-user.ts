@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole } from '../models/user';
 import jwt from 'jsonwebtoken';
+
+enum UserRole {
+    ADMIN = 'admin',
+    CUSTOMER = 'customer',
+    VENDOR = 'vendor'
+}
 
 interface userPayload {
     id: string
@@ -13,6 +18,7 @@ declare global {
     namespace Express {
         interface Request {
             currentUser?: userPayload
+            session?: any
         }
     }
 }

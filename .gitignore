@@ -19,3 +19,9 @@ env/
 
 # K8s & Skaffold overrides
 .skaffold/
+
+common-lib/node_modules
+common-lib/build
+
+client/node_modules
+client/.next
