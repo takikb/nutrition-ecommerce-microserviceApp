@@ -19,7 +19,7 @@ export default ({ currentUser }) => {
     return (
         <nav className="navbar navbar-light bg-light">
             <Link href="/" className="navbar-brand">
-                Nutrition App
+                D-Ziet
             </Link>
 
             <div className="d-flex justify-content-end">

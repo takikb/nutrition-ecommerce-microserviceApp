@@ -7,8 +7,7 @@ import { UserRole } from '../models/user';
 import { User } from '../models/user';
 import { VendorProfile } from '../models/vendor-profile';
 import { HealthProfile, Gender, PrimaryHealthGoals, ActivityLevel } from '../models/health-profile';
-import { BadRequestError } from '../errors/bad-request-error';
-import { validateRequest } from '../middlewares/validate-request';
+import { BadRequestError, validateRequest } from '@d-ziet/common-lib';
 
 const router = express.Router();
 
