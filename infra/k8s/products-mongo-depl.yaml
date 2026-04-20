@@ -1,0 +1,48 @@
+apiVersion : apps/v1
+kind : Deployment
+metadata :
+  name : products-mongo-depl
+spec :
+  replicas : 1
+  selector :
+    matchLabels :
+      app : products-mongo
+  template :
+    metadata :
+      labels :
+        app : products-mongo
+    spec :
+      containers:
+        - name: products-mongo
+          image: mongo
+          command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+          ports :
+            - containerPort : 27017
+
+          # 2. Sidecar Container (Auto-initiates the Replica Set)
+        - name: mongo-init-replica
+          image: mongo
+          command:
+            - "bash"
+            - "-c"
+            - |
+              echo "Waiting for MongoDB to start..."
+              sleep 5
+              mongosh --host localhost:27017 --eval 'rs.initiate({_id: "rs0", members:[{_id: 0, host: "products-mongo-srv:27017"}]})' || true
+              echo "Replica set initialized!"
+              sleep infinity
+
+---
+
+apiVersion : v1
+kind : Service
+metadata :
+  name : products-mongo-srv
+spec :
+  selector :  #find the pod with label app=products-mongo
+    app : products-mongo
+  ports :
+    - name : products-mongo-db
+      protocol : TCP
+      port : 27017
+      targetPort : 27017
