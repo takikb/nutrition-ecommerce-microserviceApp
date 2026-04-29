@@ -14,7 +14,7 @@ interface VendorProfileAttrs {
 interface vendorProfileModel extends mongoose.Model<VendorProfileDoc> {
     build(attrs: VendorProfileAttrs): VendorProfileDoc;
 }
-
+ 
 interface VendorProfileDoc extends mongoose.Document {
     userId: string
     displayName: string
