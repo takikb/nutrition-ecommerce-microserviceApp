@@ -41,7 +41,7 @@ global.getAuthCookie = async () => {
         phoneNumber: '1234567890',
         location: {
             address: '123 Test St',
-            city: 'Testville'
+            wilaya: 'Testville'
         }
     };
 

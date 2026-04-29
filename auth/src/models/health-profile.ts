@@ -77,7 +77,7 @@ interface HealthProfileDoc extends mongoose.Document {
     createdAt: Date;
     updatedAt: Date;
 }
-
+ 
 const healthProfileSchema = new mongoose.Schema({
     userId: { 
       type: mongoose.Schema.Types.ObjectId, 
