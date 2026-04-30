@@ -15,22 +15,8 @@ spec :
       containers:
         - name: products-mongo
           image: mongo
-          command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
           ports :
             - containerPort : 27017
-
-          # 2. Sidecar Container (Auto-initiates the Replica Set)
-        - name: mongo-init-replica
-          image: mongo
-          command:
-            - "bash"
-            - "-c"
-            - |
-              echo "Waiting for MongoDB to start..."
-              sleep 5
-              mongosh --host localhost:27017 --eval 'rs.initiate({_id: "rs0", members:[{_id: 0, host: "products-mongo-srv:27017"}]})' || true
-              echo "Replica set initialized!"
-              sleep infinity
 
 ---
 

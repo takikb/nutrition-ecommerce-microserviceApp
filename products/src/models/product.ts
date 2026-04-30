@@ -41,20 +41,27 @@ export enum PrimaryHealthGoals {
     IMPROVED_ENERGY = 'improved_energy'
 }
 
+export enum ProductVerificationStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected'
+}
 
 interface ProductAttrs {
     title: string;
     description: string;
     priceDZD: number;
-    imageUrl: string;
+    
+    images: string[]; 
+    nutritionTableImage: string; 
+    
     category: ProductCategory;
-    vendorId: string; 
-    vendorName: string; 
+    vendorId: string;
     calories: number;
     proteinGrams: number;
     carbsGrams: number;
     fatGrams: number;
-    containsAllergens: Allergy[]; // MANUALLY selected by vendor
+    containsAllergens: Allergy[];
 }
 
 interface ProductModel extends mongoose.Model<ProductDoc> {
@@ -65,45 +72,53 @@ interface ProductDoc extends mongoose.Document {
     title: string;
     description: string;
     priceDZD: number;
-    imageUrl: string;
+    images: string[];
+    nutritionTableImage: string;
     category: ProductCategory;
     vendorId: string;
-    vendorName: string;
     calories: number;
     proteinGrams: number;
     carbsGrams: number;
     fatGrams: number;
     containsAllergens: Allergy[];
     
-    // AI Generated Fields
+    // Status tracking
+    verificationStatus: ProductVerificationStatus;
+    
     aiAnalyzed: boolean;
     suitableForConditions: MedicalCondition[];
     targetGoals: PrimaryHealthGoals[];
-    
     isAvailable: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
 
-
 const productSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
     priceDZD: { type: Number, required: true, min: 0 },
-    imageUrl: { type: String, required: true },
+    
+    images:[{ type: String, required: true }],
+    // Specific field for the proof
+    nutritionTableImage: { type: String, required: true },
+    
     category: { type: String, enum: Object.values(ProductCategory), required: true },
     vendorId: { type: String, required: true },
-    vendorName: { type: String, required: true },
     
     calories: { type: Number, required: true, min: 0 },
     proteinGrams: { type: Number, required: true, min: 0 },
     carbsGrams: { type: Number, required: true, min: 0 },
     fatGrams: { type: Number, required: true, min: 0 },
 
-    // Vendor takes legal responsibility for these:
-    containsAllergens:[{ type: String, enum: Object.values(Allergy), default: [Allergy.NONE] }],
+    containsAllergens:[{ type: String, enum: Object.values(Allergy), default:[Allergy.NONE] }],
 
-    // AI Service fills these asynchronously later:
+    // Default to pending!
+    verificationStatus: { 
+        type: String, 
+        enum: Object.values(ProductVerificationStatus), 
+        default: ProductVerificationStatus.PENDING 
+    },
+
     aiAnalyzed: { type: Boolean, default: false },
     suitableForConditions:[{ type: String, enum: Object.values(MedicalCondition), default: [] }],
     targetGoals:[{ type: String, enum: Object.values(PrimaryHealthGoals), default: [] }],

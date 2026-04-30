@@ -3,6 +3,7 @@ import { json } from 'body-parser'
 import cookieSession from 'cookie-session'
 import { errorHandler, NotFoundError, requireAuth, currentUser } from '@d-ziet/common-lib'
 import { newProductRouter } from './routes/new'
+import { showProductRouter } from './routes/show'
 
 const app = express()
 app.set('trust proxy', true) // trust traffic from ingress-nginx
@@ -16,6 +17,7 @@ app.use(
 
 app.use(currentUser)
 app.use(newProductRouter)
+app.use(showProductRouter)
 
 app.all(/(.*)/, async() => {
     throw new NotFoundError();

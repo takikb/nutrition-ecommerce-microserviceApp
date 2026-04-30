@@ -1,45 +1,4 @@
 
-```
-nutrition
-├─ auth
-│  ├─ .dockerignore
-│  ├─ Dockerfile
-│  ├─ package-lock.json
-│  ├─ package.json
-│  ├─ src
-│  │  ├─ errors
-│  │  │  ├─ bad-request-error.ts
-│  │  │  ├─ custom-error.ts
-│  │  │  ├─ database-connection-errors.ts
-│  │  │  ├─ not-authorized-error.ts
-│  │  │  ├─ not-found-error.ts
-│  │  │  └─ request-validation-error.ts
-│  │  ├─ index.ts
-│  │  ├─ middlewares
-│  │  │  ├─ current-user.ts
-│  │  │  ├─ error-handler.ts
-│  │  │  ├─ require-auth.ts
-│  │  │  └─ validate-request.ts
-│  │  ├─ models
-│  │  │  ├─ health-profile.ts
-│  │  │  └─ user.ts
-│  │  ├─ routes
-│  │  │  ├─ current-user.ts
-│  │  │  ├─ signin.ts
-│  │  │  ├─ signout.ts
-│  │  │  └─ signup.ts
-│  │  └─ services
-│  │     └─ password.ts
-│  └─ tsconfig.json
-├─ infra
-│  └─ k8s
-│     ├─ auth-depl.yaml
-│     ├─ auth-mongo-depl.yaml
-│     └─ ingress-srv.yaml
-├─ schema.json
-└─ skaffold.yaml
-
-```
 
 # Nutrition E-Commerce (K8s Setup)
 
@@ -57,6 +16,8 @@ Before running Skaffold, you MUST create the JWT secret in your local Kubernetes
 Run `skaffold dev ` in the root directory.
 
 if you are using minikube, start it at first `minikube start`, then start a tunnel `minikube tunnel`, then run `skaffold dev`
+
+
 ```
 nutrition
 ├─ auth
