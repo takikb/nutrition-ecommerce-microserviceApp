@@ -3,6 +3,8 @@ import { body } from 'express-validator'
 import { requireAuth, validateRequest } from '@d-ziet/common-lib'
 import { ProductCategory, Allergy } from '../models/product'
 import { Product } from '../models/product'
+import { ProductCreatedPublisher } from '../events/publishers/product-created-publisher'
+import { natsWrapper } from '../nats-wrapper'
 
 const router = express.Router()
 
@@ -70,6 +72,22 @@ router.post('/api/products', requireAuth, [
         containsAllergens
     });
     await product.save();
+
+    new ProductCreatedPublisher(natsWrapper.client).publish({
+        id: product._id.toString(),
+        title: product.title,
+        description: product.description,
+        priceDZD: product.priceDZD,
+        images: product.images,
+        nutritionTableImage: product.nutritionTableImage,
+        category: product.category,
+        vendorId: product.vendorId,
+        calories: product.calories,
+        proteinGrams: product.proteinGrams,
+        carbsGrams: product.carbsGrams,
+        fatGrams: product.fatGrams,
+        containsAllergens: product.containsAllergens
+    });
 
     res.status(201).send(product);
 })
