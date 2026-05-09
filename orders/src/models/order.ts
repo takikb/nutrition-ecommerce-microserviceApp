@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { OrderStatus } from '@d-ziet/common-lib'
+import { ProductDoc } from "./product";
 
 interface OrderAttrs {
     userId: string;
