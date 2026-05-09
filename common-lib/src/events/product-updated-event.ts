@@ -1,5 +1,5 @@
 import { Subjects } from "./subjects";
-import { ProductCategory, Allergy } from "./product-created-event";
+import { ProductCategory, Allergy } from "./types/product";
 
 export interface ProductUpdatedEvent {
     subject: Subjects.ProductUpdated
