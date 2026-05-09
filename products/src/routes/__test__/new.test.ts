@@ -1,6 +1,7 @@
 import request from "supertest";
 import { app } from "../../app";
 import { Product } from "../../models/product";
+import { natsWrapper } from "../../nats-wrapper";
 
 const title = 'Test Product';
 const description = 'This is a test product description.';
@@ -100,4 +101,26 @@ it('creates a product with valid input', async () => {
 
     products = await Product.find({});
     expect(products.length).toEqual(1);
+})
+
+it('publishes an event', async () => {
+    await request(app)
+        .post('/api/products')
+        .set('Cookie', global.signin())
+        .send({
+            title,
+            description,
+            priceDZD,
+            images,
+            nutritionTableImage,
+            category,
+            calories,
+            proteinGrams,
+            carbsGrams,
+            fatGrams,
+            containsAllergens
+        })
+        .expect(201)
+    
+    expect(natsWrapper.client.publish).toHaveBeenCalled();
 })
