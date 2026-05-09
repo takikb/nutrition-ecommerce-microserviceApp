@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { app } from '../../app'
 import mongoose from 'mongoose'
+import { natsWrapper } from '../../nats-wrapper';
 
 const title = 'Test Product';
 const description = 'This is a test product description.';
@@ -169,4 +170,29 @@ it('updates the product with valid inputs', async () => {
         .send()
     
     expect(productResponse.body.title).toEqual('Updated Title');
+})
+
+it('publishes an event', async () => {
+    const cookie = global.signin();
+    const response = await createProduct(cookie);
+
+    await request(app)
+        .put(`/api/products/${response.body.id}`)
+        .set('Cookie', cookie)
+        .send({
+            title: 'Updated Title',
+            description,
+            priceDZD,
+            images,
+            nutritionTableImage,
+            category,
+            calories,
+            proteinGrams,
+            carbsGrams,
+            fatGrams,
+            containsAllergens
+        })
+        .expect(200)
+
+    expect(natsWrapper.client.publish).toHaveBeenCalled();
 })

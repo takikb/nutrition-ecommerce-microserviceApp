@@ -73,7 +73,7 @@ router.post('/api/products', requireAuth, [
     });
     await product.save();
 
-    new ProductCreatedPublisher(natsWrapper.client).publish({
+    await new ProductCreatedPublisher(natsWrapper.client).publish({
         id: product._id.toString(),
         title: product.title,
         description: product.description,
