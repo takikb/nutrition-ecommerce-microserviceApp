@@ -2,6 +2,8 @@ import express, {Request, Response} from 'express';
 import { OrderStatus } from '@d-ziet/common-lib';
 import { NotFoundError, requireAuth, NotAuthorizedError, requireRole } from '@d-ziet/common-lib';
 import { Order } from '../models/order';
+import { OrderCancelledPublisher } from '../events/publishers/order-cancelled-publisher';
+import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
@@ -21,6 +23,16 @@ router.delete('/api/orders/:orderId',requireAuth, requireRole(['customer']), asy
     await order.save();
 
     //publish an event saying that the order is cancelled
+    await new OrderCancelledPublisher(natsWrapper.client).publish({
+        id: JSON.stringify(order._id),
+        status: order.status,
+        userId: order.userId,
+        product: {
+            id: JSON.stringify(order.product._id),
+            title: order.product.name,
+            priceDZD: order.product.priceDZD
+        },
+    });
 
     res.status(204).send(order);
 });
