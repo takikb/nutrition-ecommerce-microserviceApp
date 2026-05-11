@@ -47,6 +47,14 @@ export enum ProductVerificationStatus {
     REJECTED = 'rejected'
 }
 
+// Vendor Product Lifecycle Status
+export enum ProductStatus {
+    DRAFT = 'draft',
+    ACTIVE = 'active',
+    SOLD_OUT = 'sold_out',
+    ARCHIVED = 'archived'
+}
+
 interface ProductAttrs {
     title: string;
     description: string;
@@ -84,7 +92,12 @@ interface ProductDoc extends mongoose.Document {
     
     // Status tracking
     verificationStatus: ProductVerificationStatus;
+    rejectionReason?: string; // Why was it rejected?
+    status: ProductStatus;    // Vendor's listing status
     
+    // Marketplace Metrics
+    inquiryCount: number;     // How many people clicked "Order"
+
     aiAnalyzed: boolean;
     suitableForConditions: MedicalCondition[];
     targetGoals: PrimaryHealthGoals[];
@@ -118,6 +131,15 @@ const productSchema = new mongoose.Schema({
         enum: Object.values(ProductVerificationStatus), 
         default: ProductVerificationStatus.PENDING 
     },
+
+    rejectionReason: { type: String },
+    status: {
+        type: String,
+        enum: Object.values(ProductStatus),
+        default: ProductStatus.DRAFT
+    },
+
+    inquiryCount: { type: Number, default: 0 },
 
     aiAnalyzed: { type: Boolean, default: false },
     suitableForConditions:[{ type: String, enum: Object.values(MedicalCondition), default: [] }],
