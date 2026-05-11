@@ -5,6 +5,8 @@ import { body } from 'express-validator';
 import { OrderStatus } from '@d-ziet/common-lib';
 import { Product } from '../models/product';
 import { Order } from '../models/order';
+import { OrderCreatedPublisher } from '../events/publishers/order-created-publisher';
+import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
@@ -30,6 +32,18 @@ async (req: Request, res: Response) => {
         product
     });
     await order.save();
+
+    // Publish an event saying that an order was created
+    await new OrderCreatedPublisher(natsWrapper.client).publish({
+        id: JSON.stringify(order._id),
+        status: order.status,
+        userId: order.userId,
+        product: {
+            id: product.id,
+            title: product.name,
+            priceDZD: product.priceDZD
+        },
+    });
 
     res.status(201).send(order);
 });
