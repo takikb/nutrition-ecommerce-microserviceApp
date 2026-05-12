@@ -16,7 +16,8 @@ it('returns an error if the product does not exist', async () => {
 
 it('order a product successfully', async () => {
     const product = Product.build({
-        name: 'Test Product',
+        id: new mongoose.Types.ObjectId().toHexString(),
+        title: 'Test Product',
         priceDZD: 1000
     })
     await product.save()
@@ -30,10 +31,11 @@ it('order a product successfully', async () => {
 
 it('emits an order created event', async () => {
         const product = Product.build({
-        name: 'Test Product',
-        priceDZD: 1000
-    })
-    await product.save()
+            id: new mongoose.Types.ObjectId().toHexString(),
+            title: 'Test Product',
+            priceDZD: 1000
+        })
+        await product.save()
 
     await request(app)
         .post('/api/orders')

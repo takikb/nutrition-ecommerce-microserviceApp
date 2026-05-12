@@ -93,7 +93,8 @@ router.put('/api/products/:id', requireAuth, [
         proteinGrams: product.proteinGrams,
         carbsGrams: product.carbsGrams,
         fatGrams: product.fatGrams,
-        containsAllergens: product.containsAllergens
+        containsAllergens: product.containsAllergens,
+        version: product.version
     });
 
     res.send(product)

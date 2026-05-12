@@ -23,7 +23,8 @@ async (req: Request, res: Response) => {
 
     const product = await Product.findById(productId);
     if (!product) {
-        throw new NotFoundError();
+        throw new NotFoundError(); 
+
     }
 
     const order = Order.build({
@@ -36,11 +37,12 @@ async (req: Request, res: Response) => {
     // Publish an event saying that an order was created
     await new OrderCreatedPublisher(natsWrapper.client).publish({
         id: JSON.stringify(order._id),
+        version: order.version,
         status: order.status,
         userId: order.userId,
         product: {
             id: product.id,
-            title: product.name,
+            title: product.title,
             priceDZD: product.priceDZD
         },
     });
