@@ -13,7 +13,7 @@ router.delete('/api/orders/:orderId',requireAuth, requireRole(['customer']), asy
     const order = await Order.findById(orderId);
 
     if (!order) {
-        throw new NotFoundError();
+        throw new NotFoundError(); 
     }
     if (order.userId !== req.currentUser!.id) {
         throw new NotAuthorizedError();
@@ -25,11 +25,12 @@ router.delete('/api/orders/:orderId',requireAuth, requireRole(['customer']), asy
     //publish an event saying that the order is cancelled
     await new OrderCancelledPublisher(natsWrapper.client).publish({
         id: JSON.stringify(order._id),
+        version: order.version,
         status: order.status,
         userId: order.userId,
         product: {
             id: JSON.stringify(order.product._id),
-            title: order.product.name,
+            title: order.product.title,
             priceDZD: order.product.priceDZD
         },
     });

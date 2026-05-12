@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-
 export enum ProductCategory {
     MEAL_PREP = 'meal_prep',
     SNACK = 'snack',
@@ -104,6 +103,8 @@ interface ProductDoc extends mongoose.Document {
     isAvailable: boolean;
     createdAt: Date;
     updatedAt: Date;
+
+    version: number;
 }
 
 const productSchema = new mongoose.Schema({
@@ -148,12 +149,20 @@ const productSchema = new mongoose.Schema({
     isAvailable: { type: Boolean, default: true }
 }, {
     timestamps: true,
+    optimisticConcurrency: true,
     toJSON: {
         transform(doc, ret: any) {
             ret.id = ret._id;
             delete ret._id;
             delete ret.__v;
         }
+    }
+});
+productSchema.set('versionKey', 'version');
+
+productSchema.pre('save', function() {
+    if (!this.isNew) {
+        this.increment();
     }
 });
 

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import request from 'supertest';
 import { app } from '../../app';
 import { OrderStatus } from '@d-ziet/common-lib';
@@ -8,7 +9,8 @@ import { natsWrapper } from '../../nats-wrapper';
 it('cancels an order successfully', async () => {
     const user = global.signin();
     const product = Product.build({
-        name: 'Test Product',
+        id: new mongoose.Types.ObjectId().toHexString(),
+        title: 'Test Product',
         priceDZD: 1000
     });
     await product.save();
@@ -20,19 +22,20 @@ it('cancels an order successfully', async () => {
         .expect(201);
 
     await request(app)
-        .delete(`/api/orders/${order._id}`)
+        .delete(`/api/orders/${order.id}`)
         .set('Cookie', user)
         .expect(204);
 
     //expectation to make sure the order is cancelled
-    const updatedOrder = await Order.findById(order._id);
+    const updatedOrder = await Order.findById(order.id);
     expect(updatedOrder!.status).toEqual(OrderStatus.Cancelled);
 })
 
 it('emits an order cancelled event', async () => {
     const user = global.signin();
     const product = Product.build({
-        name: 'Test Product',
+        id: new mongoose.Types.ObjectId().toHexString(),
+        title: 'Test Product',
         priceDZD: 1000
     });
     await product.save();
@@ -44,7 +47,7 @@ it('emits an order cancelled event', async () => {
         .expect(201);
 
     await request(app)
-        .delete(`/api/orders/${order._id}`)
+        .delete(`/api/orders/${order.id}`)
         .set('Cookie', user)
         .expect(204);
 

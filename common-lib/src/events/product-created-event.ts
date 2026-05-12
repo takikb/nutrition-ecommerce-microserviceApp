@@ -5,6 +5,7 @@ export interface ProductCreatedEvent {
     subject: Subjects.ProductCreated
     data: {
         id: string;
+        version: number;
         title: string;
         description: string;
         priceDZD: number;

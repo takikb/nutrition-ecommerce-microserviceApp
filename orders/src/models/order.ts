@@ -12,6 +12,7 @@ interface OrderDoc extends mongoose.Document {
     userId: string;
     status: OrderStatus;
     product: ProductDoc;
+    version: number;
 }
 
 interface OrderModel extends mongoose.Model<OrderDoc> {
@@ -35,8 +36,23 @@ const orderSchema = new mongoose.Schema({
         required: true
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    optimisticConcurrency: true,
+    toJSON: {
+        transform(doc, ret: any) {
+            ret.id = ret._id;
+            delete ret._id;
+        }
+    }
 });
+orderSchema.set('versionKey', 'version');
+
+orderSchema.pre('save', function() {
+    if (!this.isNew) {
+        this.increment();
+    }
+});
+
 
 orderSchema.statics.build = (attrs: OrderAttrs) => {
     return new Order(attrs);
