@@ -1,7 +1,7 @@
 import express from 'express'
 import { json } from 'body-parser'
 import cookieSession from 'cookie-session'
-import { errorHandler, NotFoundError, requireAuth, currentUser } from '@d-ziet/common-lib'
+import { errorHandler, NotFoundError, currentUser } from '@d-ziet/common-lib'
 import { newProductRouter } from './routes/new'
 import { showProductRouter } from './routes/show'
 import { indexProductRouter } from './routes/index'

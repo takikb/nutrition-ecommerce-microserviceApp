@@ -1,29 +1,25 @@
-import { Listener, OrderCancelledEvent, Subjects } from "@d-ziet/common-lib";
+import { Listener, OrderCreatedEvent, Subjects } from "@d-ziet/common-lib";
 import { queueGroupName } from "./queue-group-name";
 import { Message } from "node-nats-streaming";
 import { Product } from "../../models/product";
 import { natsWrapper } from "../../nats-wrapper";
-import { ProductUpdatedPublisher } from "../../events/publishers/product-updated-publisher";
+import { ProductUpdatedPublisher } from "../publishers/product-updated-publisher";
 
-export class OrderCancelledListener extends Listener<OrderCancelledEvent> {
-    subject: Subjects.OrderCancelled = Subjects.OrderCancelled;
+export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
+    subject: Subjects.OrderCreated = Subjects.OrderCreated;
     queueGroupName = queueGroupName;
 
-    async onMessage(data: OrderCancelledEvent['data'], msg: Message) {
+    async onMessage(data: OrderCreatedEvent['data'], msg: Message) {
         const product = await Product.findById(data.product.id);
 
         if (!product) {
             throw new Error('Product not found');
         }
-
-        // FIX: Safely decrement. If it's already 0, it stays 0. It never goes negative!
-        const newCount = Math.max(0, product.inquiryCount - 1);
-    
-        product.set({ inquiryCount: newCount });
+        product.set({ inquiryCount: product.inquiryCount + 1 });
         await product.save();
 
         await new ProductUpdatedPublisher(natsWrapper.client).publish({
-            id: product.id,
+            id: product._id.toString(),
             title: product.title,                
             description: product.description,
             priceDZD: product.priceDZD,
