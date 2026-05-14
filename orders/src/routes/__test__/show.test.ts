@@ -8,7 +8,8 @@ it('fetches the order', async () => {
     const product = Product.build({
         id: new mongoose.Types.ObjectId().toHexString(),
         title: 'Test Product',
-        priceDZD: 1000
+        priceDZD: 1000,
+        vendorId: new mongoose.Types.ObjectId().toHexString()
     })
     await product.save()
     
@@ -34,7 +35,8 @@ it('returns an error if a different user tries to fetch an order', async () => {
     const product = Product.build({
         id: new mongoose.Types.ObjectId().toHexString(),
         title: 'Test Product',
-        priceDZD: 1000
+        priceDZD: 1000,
+        vendorId: new mongoose.Types.ObjectId().toHexString()
     })
     await product.save()
     

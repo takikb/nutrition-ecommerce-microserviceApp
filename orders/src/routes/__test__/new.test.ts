@@ -18,7 +18,8 @@ it('order a product successfully', async () => {
     const product = Product.build({
         id: new mongoose.Types.ObjectId().toHexString(),
         title: 'Test Product',
-        priceDZD: 1000
+        priceDZD: 1000,
+        vendorId: new mongoose.Types.ObjectId().toHexString()
     })
     await product.save()
 
@@ -33,7 +34,8 @@ it('emits an order created event', async () => {
         const product = Product.build({
             id: new mongoose.Types.ObjectId().toHexString(),
             title: 'Test Product',
-            priceDZD: 1000
+            priceDZD: 1000,
+            vendorId: new mongoose.Types.ObjectId().toHexString()
         })
         await product.save()
 
