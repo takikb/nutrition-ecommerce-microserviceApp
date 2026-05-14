@@ -31,7 +31,8 @@ router.delete('/api/orders/:orderId',requireAuth, requireRole(['customer']), asy
         product: {
             id: JSON.stringify(order.product._id),
             title: order.product.title,
-            priceDZD: order.product.priceDZD
+            priceDZD: order.product.priceDZD,
+            vendorId: order.product.vendorId
         },
     });
 

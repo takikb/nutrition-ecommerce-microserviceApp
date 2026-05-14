@@ -11,6 +11,7 @@ export interface OrderCancelledEvent {
             id: string;
             title: string;
             priceDZD: number;
+            vendorId: string;
         }
     }
 }

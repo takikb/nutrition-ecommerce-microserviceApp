@@ -4,12 +4,14 @@ interface ProductAttrs {
     id: string;
     title: string;
     priceDZD: number;
+    vendorId: string;
 }
 
 export interface ProductDoc extends mongoose.Document{
     title: string;
     priceDZD: number;
     version: number;
+    vendorId: string;
 }
 
 interface ProductModel extends mongoose.Model<ProductDoc> {
@@ -26,6 +28,10 @@ const productSchema = new mongoose.Schema({
         type: Number, 
         required: true, 
         min: 0
+    },
+    vendorId: { 
+        type: String, 
+        required: true 
     }
 },{
     optimisticConcurrency: true,
@@ -56,7 +62,8 @@ productSchema.statics.build = (attrs: ProductAttrs) => {
     return new Product({
         _id: attrs.id,
         title: attrs.title,
-        priceDZD: attrs.priceDZD
+        priceDZD: attrs.priceDZD,
+        vendorId: attrs.vendorId
     });
 }
 

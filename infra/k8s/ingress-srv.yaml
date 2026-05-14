@@ -31,6 +31,13 @@ spec:
                 name: orders-srv
                 port:
                   number: 3000
+          - path: /api/chat/?(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: chat-srv
+                port:
+                  number: 3000
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:

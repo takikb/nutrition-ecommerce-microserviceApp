@@ -8,7 +8,8 @@ const buildProduct = async (title: string, priceDZD: number) => {
     const product = Product.build({
         id: new mongoose.Types.ObjectId().toHexString(),
         title,
-        priceDZD
+        priceDZD,
+        vendorId: new mongoose.Types.ObjectId().toHexString()
     });
     await product.save();
     return product;

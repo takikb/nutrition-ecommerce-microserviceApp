@@ -43,7 +43,8 @@ async (req: Request, res: Response) => {
         product: {
             id: product.id,
             title: product.title,
-            priceDZD: product.priceDZD
+            priceDZD: product.priceDZD,
+            vendorId: product.vendorId
         },
     });
 
