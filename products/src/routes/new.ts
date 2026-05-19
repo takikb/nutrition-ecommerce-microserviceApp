@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import { body } from 'express-validator'
 import { requireAuth, validateRequest } from '@d-ziet/common-lib'
-import { ProductCategory, Allergy } from '../models/product'
+import { ProductCategory, Allergy, MedicalCondition } from '../models/product'
 import { Product } from '../models/product'
 import { ProductCreatedPublisher } from '../events/publishers/product-created-publisher'
 import { natsWrapper } from '../nats-wrapper'
@@ -52,10 +52,14 @@ router.post('/api/products', requireAuth, [
     body('containsAllergens')
         .isArray()
         .isIn(Object.values(Allergy))
-        .withMessage('Contains allergens must be an array')
+        .withMessage('Contains allergens must be an array'),
+    body('MedicalCondition')
+        .isArray()
+        .isIn(Object.values(MedicalCondition))
+        .withMessage('Medical conditions must be an array'),
 
 ], validateRequest, async (req: Request, res: Response) => {
-    const { title, description, priceDZD, images, nutritionTableImage, category, calories, proteinGrams, carbsGrams, fatGrams, containsAllergens } = req.body;
+    const { title, description, priceDZD, images, nutritionTableImage, category, calories, proteinGrams, carbsGrams, fatGrams, containsAllergens, MedicalCondition } = req.body;
 
     const product = Product.build({
         title,
@@ -69,25 +73,34 @@ router.post('/api/products', requireAuth, [
         proteinGrams,
         carbsGrams,
         fatGrams,
-        containsAllergens
+        containsAllergens: containsAllergens || [Allergy.NONE],
+        MedicalCondition: MedicalCondition || [MedicalCondition.NONE]
     });
-    await product.save();
+    await product.save()
 
     await new ProductCreatedPublisher(natsWrapper.client).publish({
         id: product._id.toString(),
+        version: product.version,
         title: product.title,
         description: product.description,
         priceDZD: product.priceDZD,
+
         images: product.images,
         nutritionTableImage: product.nutritionTableImage,
-        category: product.category,
+            
+        // TypeScript Enums sometimes need to be casted when coming from Mongoose Docs
+        category: product.category as any,
         vendorId: product.vendorId,
         calories: product.calories,
         proteinGrams: product.proteinGrams,
         carbsGrams: product.carbsGrams,
         fatGrams: product.fatGrams,
         containsAllergens: product.containsAllergens,
-        version: product.version
+        MedicalCondition: product.MedicalCondition,
+
+        verificationStatus: product.verificationStatus,
+        status: product.status,
+        targetGoals: product.targetGoals
     });
 
     res.status(201).send(product);

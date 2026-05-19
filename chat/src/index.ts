@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
-import { httpServer } from "./app";
-import { natswrapper } from "./nats-wrapper";
+import { httpServer, io } from "./app";
+import { natsWrapper } from "./nats-wrapper";
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
 
 const start = async () => {
     if (!process.env.JWT_KEY) {
@@ -23,19 +25,32 @@ const start = async () => {
         throw new Error('NATS_CLIENT_ID must be defined')
     }
 
+    //connect to a redis pod in the same Kubernetes cluster
+    const pubClient = createClient({ url: 'redis://redis-master:6379' });
+    const subClient = pubClient.duplicate();
+    
+    Promise.all([pubClient.connect(), subClient.connect()])
+
+        try {
+            io.adapter(createAdapter(pubClient, subClient));
+            console.log('Connected to Redis and Socket.IO adapter set up');
+        } catch (error) {
+            console.error('Error connecting to Redis:', error);
+        }
+
     try {
-        await natswrapper.connect(
+        await natsWrapper.connect(
             process.env.NATS_CLUSTER_ID,
             process.env.NATS_CLIENT_ID,
             process.env.NATS_URL
         )
 
-        natswrapper.client.on('close', () => {
+        natsWrapper.client.on('close', () => {
             console.log('NATS connection closed!')
             process.exit()
         })
-        process.on('SIGINT', () => natswrapper.client.close())
-        process.on('SIGTERM', () => natswrapper.client.close())
+        process.on('SIGINT', () => natsWrapper.client.close())
+        process.on('SIGTERM', () => natsWrapper.client.close())
         
         await mongoose.connect(process.env.MONGO_URI)
         console.log('Connected to MongoDB')

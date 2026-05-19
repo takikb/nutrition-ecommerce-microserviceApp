@@ -1,13 +1,11 @@
 import express from 'express'
 import { json } from 'body-parser'
 import cookieSession from 'cookie-session'
-import { errorHandler, NotFoundError, currentUser } from '@d-ziet/common-lib'
+import { errorHandler, NotFoundError, currentUser, NotAuthorizedError } from '@d-ziet/common-lib'
+import jwt from 'jsonwebtoken'
 
 import { createServer } from 'http'
 import { Server } from 'socket.io'
-import { createAdapter } from '@socket.io/redis-adapter'
-import { createClient } from 'redis'
-import { Promise } from 'mongoose'
 
 import { newConversationRouter } from './routes/new-conversation';
 import { indexConversationsRouter } from './routes/index-conversations';
@@ -27,6 +25,22 @@ app.use(
     })
 )
 
+app.use(currentUser)
+
+app.use(newConversationRouter);
+app.use(indexConversationsRouter);
+app.use(showMessagesRouter);
+app.use(newMessageRouter);
+app.use(readMessagesRouter);
+app.use(unreadCountRouter);
+
+app.all(/(.*)/, async() => {
+    throw new NotFoundError();
+})
+
+app.use(errorHandler)
+
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
@@ -35,15 +49,18 @@ const io = new Server(httpServer, {
     }
 });
 
-//connect to a redis pod in the same Kubernetes cluster
-const pubClient = createClient({ url: 'redis://redis-master:6379' });
-const subClient = pubClient.duplicate();
 
-Promise.all([pubClient.connect(), subClient.connect()])
-    .then(() => {
-        io.adapter(createAdapter(pubClient, subClient));
-        console.log('Connected to Redis and Socket.IO adapter set up');
-    })
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token; // frontend must send this token when connecting
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_KEY!) as any;
+        socket.data.userId = payload.id;
+        next();
+    } catch (error) {
+        next(new NotAuthorizedError());
+    }
+});
 
 //socket.io connection handler
 io.on('connection', (socket: any) => {
@@ -59,21 +76,5 @@ io.on('connection', (socket: any) => {
         console.log('User disconnected:', socket.id);
     })
 });
-
-
-app.use(currentUser)
-
-app.use(newConversationRouter);
-app.use(indexConversationsRouter);
-app.use(showMessagesRouter);
-app.use(newMessageRouter);
-app.use(readMessagesRouter);
-app.use(unreadCountRouter);
-
-app.all(/(.*)/, async() => {
-    throw new NotFoundError();
-})
-
-app.use(errorHandler)
 
 export { app, io, httpServer }

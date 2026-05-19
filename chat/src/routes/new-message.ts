@@ -15,6 +15,7 @@ router.post('/api/messages', requireAuth, [
         .withMessage('conversationId must be provided'),
     body('content')
         .not()
+        .trim()
         .isEmpty()
         .withMessage('content must be provided')
 ], validateRequest, async (req: Request, res: Response) => {

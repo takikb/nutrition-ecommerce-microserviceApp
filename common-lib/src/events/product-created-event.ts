@@ -1,5 +1,5 @@
 import { Subjects } from "./subjects";
-import { ProductCategory, Allergy } from "./types/product";
+import { ProductCategory, Allergy, ProductStatus, ProductVerificationStatus, PrimaryHealthGoals, MedicalCondition } from "./types/product";
 
 export interface ProductCreatedEvent {
     subject: Subjects.ProductCreated
@@ -20,5 +20,21 @@ export interface ProductCreatedEvent {
         carbsGrams: number;
         fatGrams: number;
         containsAllergens: Allergy[];
+        MedicalCondition: MedicalCondition[];
+        
+        verificationStatus: ProductVerificationStatus;
+        
+        rejectionReason?: string; // Why was it rejected?
+        status: ProductStatus;    // Vendor's listing status
+        rejectedAt?: Date;
+        
+        // Marketplace Metrics
+        inquiryCount?: number;     // How many people clicked "Order"
+
+        aiAnalyzed?: boolean;
+        targetGoals: PrimaryHealthGoals[];
+        isAvailable?: boolean;
+        createdAt?: Date;
+        updatedAt?: Date;
     }
 }

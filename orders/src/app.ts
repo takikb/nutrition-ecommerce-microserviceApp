@@ -6,6 +6,7 @@ import { newOrderRouter } from './routes/new'
 import { showOrderRouter } from './routes/show'
 import { indexOrderRouter } from './routes/index'
 import { deleteOrderRouter } from './routes/delete'
+import { completeOrderRouter } from './routes/complete'
 
 const app = express()
 app.set('trust proxy', true) // trust traffic from ingress-nginx
@@ -23,6 +24,7 @@ app.use(newOrderRouter)
 app.use(showOrderRouter)
 app.use(indexOrderRouter)
 app.use(deleteOrderRouter)
+app.use(completeOrderRouter)
 
 app.all(/(.*)/, async() => {
     throw new NotFoundError();

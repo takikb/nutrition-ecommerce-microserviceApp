@@ -2,12 +2,15 @@ import { MongoMemoryReplSet, MongoMemoryServer } from 'mongodb-memory-server'
 import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken';
 
+console.log('1. setup starting');
+
 declare global {
     var signin: () => string[];
-    var signinVendor: (vendorId: string) => string[];
 }
 
 jest.mock('../nats-wrapper');
+jest.mock('../app');
+
 
 let mongo: any;
 beforeAll(async () => {
@@ -40,31 +43,6 @@ global.signin = () => {
     // Build a JWT payload
     const payload = {
         id,
-        email: 'test@test.com',
-        fullName: 'Test User',
-        role: 'customer'
-    };
-
-    // Create the JWT
-    const token = jwt.sign(payload, process.env.JWT_KEY!)
-
-    // Build session object { jwt: MY_JWT }
-    const session = { jwt: token }
-
-    // Turn that session into JSON
-    const sessionJSON = JSON.stringify(session)
-
-    // Take JSON and encode it as base64
-    const base64 = Buffer.from(sessionJSON).toString('base64')
-
-    // return a string thats the cookie with the encoded data
-    return [`session=${base64}`];
-}
-
-global.signinVendor = (vendorId: string) => {
-    // Build a JWT payload
-    const payload = {
-        id: vendorId,
         email: 'test@test.com',
         fullName: 'Test User',
         role: 'vendor'
