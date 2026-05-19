@@ -26,6 +26,8 @@ spec:
               value: "nutrition"
             - name: MONGO_URI
               value: "mongodb://chat-mongo-srv:27017/chat"
+            - name: REDIS_URL
+              value: "redis://chat-redis-svc:27017"
             - name: JWT_KEY
               valueFrom:
                 secretKeyRef:

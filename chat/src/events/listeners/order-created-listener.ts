@@ -8,9 +8,9 @@ export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
     subject: Subjects.OrderCreated = Subjects.OrderCreated;
     queueGroupName = queueGroupName;
 
-    async onMessage(data: OrderCreatedEvent['data'], msg: Message) {
+    async onMessage(data: OrderCreatedEvent['data'], msg: Message) {        
         
-        const conversation = await Conversation.findOne({ 
+        let conversation = await Conversation.findOne({ 
             productId: data.product.id,
             customerId: data.userId,
          });
@@ -25,22 +25,26 @@ export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
                 orderId: data.id
             })
             await newConversation.save();
-            msg.ack();
-            return;
+
+            // Notify vendor via socket that a new order request is in the chat
+            io.to(data.product.vendorId).emit('orderCreatedInChat', {
+                conversationId: newConversation._id.toString(),
+                orderId: data.id
+            });
+
+        } else {
+            conversation.set({ 
+                orderId: data.id,
+                isActive: true
+            });
+            await conversation.save();
+
+            // Notify vendor via socket that a new order request is in the chat
+            io.to(data.product.vendorId).emit('orderCreatedInChat', {
+                conversationId: conversation._id.toString(),
+                orderId: data.id
+            });
         }
-
-        conversation.set({ 
-            orderId: data.id,
-            isActive: true
-        });
-        await conversation.save();
-
-        // Notify vendor via socket that a new order request is in the chat
-        io.to(data.product.vendorId).emit('orderCreatedInChat', {
-            conversationId: conversation.id,
-            orderId: data.id
-        });
-
         msg.ack();
     }
 }

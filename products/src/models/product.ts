@@ -51,7 +51,8 @@ export enum ProductStatus {
     DRAFT = 'draft',
     ACTIVE = 'active',
     SOLD_OUT = 'sold_out',
-    ARCHIVED = 'archived'
+    ARCHIVED = 'archived',
+    DELETED = 'deleted'
 }
 
 interface ProductAttrs {
@@ -69,6 +70,7 @@ interface ProductAttrs {
     carbsGrams: number;
     fatGrams: number;
     containsAllergens: Allergy[];
+    MedicalCondition: MedicalCondition[];
 }
 
 interface ProductModel extends mongoose.Model<ProductDoc> {
@@ -88,6 +90,7 @@ interface ProductDoc extends mongoose.Document {
     carbsGrams: number;
     fatGrams: number;
     containsAllergens: Allergy[];
+    MedicalCondition: MedicalCondition[];
     
     // Status tracking
     verificationStatus: ProductVerificationStatus;
@@ -98,11 +101,11 @@ interface ProductDoc extends mongoose.Document {
     inquiryCount: number;     // How many people clicked "Order"
 
     aiAnalyzed: boolean;
-    suitableForConditions: MedicalCondition[];
     targetGoals: PrimaryHealthGoals[];
     isAvailable: boolean;
     createdAt: Date;
     updatedAt: Date;
+    rejectedAt?: Date;
 
     version: number;
 }
@@ -134,6 +137,8 @@ const productSchema = new mongoose.Schema({
     },
 
     rejectionReason: { type: String },
+    rejectedAt: { type: Date },
+    
     status: {
         type: String,
         enum: Object.values(ProductStatus),
@@ -143,7 +148,7 @@ const productSchema = new mongoose.Schema({
     inquiryCount: { type: Number, default: 0 },
 
     aiAnalyzed: { type: Boolean, default: false },
-    suitableForConditions:[{ type: String, enum: Object.values(MedicalCondition), default: [] }],
+    MedicalCondition:[{ type: String, enum: Object.values(MedicalCondition), default: [] }],
     targetGoals:[{ type: String, enum: Object.values(PrimaryHealthGoals), default: [] }],
 
     isAvailable: { type: Boolean, default: true }

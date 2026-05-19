@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { Product, Allergy, ProductCategory } from '../models/product';
+import { Product, Allergy, ProductCategory, MedicalCondition } from '../models/product';
 import { body } from 'express-validator';
-import { validateRequest, NotFoundError, requireAuth, NotAuthorizedError } from '@d-ziet/common-lib';
+import { validateRequest, NotFoundError, BadRequestError, requireAuth, NotAuthorizedError, ProductVerificationStatus } from '@d-ziet/common-lib';
 import { ProductUpdatedPublisher } from '../events/publishers/product-updated-publisher';
 import { natsWrapper } from '../nats-wrapper';
 
@@ -51,11 +51,15 @@ router.put('/api/products/:id', requireAuth, [
     body('containsAllergens')
         .isArray()
         .isIn(Object.values(Allergy))
-        .withMessage('Contains allergens must be an array')
+        .withMessage('Contains allergens must be an array'),
+    body('MedicalCondition')
+        .isArray()
+        .isIn(Object.values(MedicalCondition))
+        .withMessage('Medical conditions must be an array'),
 ], validateRequest, async (req: Request, res: Response) => {
 
     const product = await Product.findById(req.params.id)
-    const { title, description, priceDZD, images, nutritionTableImage, category, calories, proteinGrams, carbsGrams, fatGrams, containsAllergens } = req.body;
+    const { title, description, priceDZD, images, nutritionTableImage, category, calories, proteinGrams, carbsGrams, fatGrams, containsAllergens, MedicalCondition } = req.body;
 
     if (!product) {
         throw new NotFoundError();
@@ -63,6 +67,11 @@ router.put('/api/products/:id', requireAuth, [
 
     if (product.vendorId !== req.currentUser!.id) {
         throw new NotAuthorizedError();
+    }
+
+    //if the product is rejected
+    if (product.verificationStatus === ProductVerificationStatus.REJECTED) {
+        throw new BadRequestError('Rejected products cannot be updated. Please create a brand new product submission.');
     }
 
     product.set({
@@ -76,25 +85,34 @@ router.put('/api/products/:id', requireAuth, [
         proteinGrams,
         carbsGrams,
         fatGrams,
-        containsAllergens
+        containsAllergens,
+        MedicalCondition
     });
     await product.save();
 
     await new ProductUpdatedPublisher(natsWrapper.client).publish({
         id: product._id.toString(),
+        version: product.version,
         title: product.title,
         description: product.description,
         priceDZD: product.priceDZD,
+
         images: product.images,
         nutritionTableImage: product.nutritionTableImage,
-        category: product.category,
+            
+        // TypeScript Enums sometimes need to be casted when coming from Mongoose Docs
+        category: product.category as any,
         vendorId: product.vendorId,
         calories: product.calories,
         proteinGrams: product.proteinGrams,
         carbsGrams: product.carbsGrams,
         fatGrams: product.fatGrams,
         containsAllergens: product.containsAllergens,
-        version: product.version
+        MedicalCondition: product.MedicalCondition,
+
+        verificationStatus: product.verificationStatus,
+        status: product.status,
+        targetGoals: product.targetGoals
     });
 
     res.send(product)

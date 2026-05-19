@@ -4,6 +4,11 @@ metadata:
   name: ingress-service
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Essential for Socket.io
+    nginx.ingress.kubernetes.io/websocket-services: "chat-srv"
 spec:
   ingressClassName: nginx
   rules:
