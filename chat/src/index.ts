@@ -26,17 +26,20 @@ const start = async () => {
     }
 
     //connect to a redis pod in the same Kubernetes cluster
-    const pubClient = createClient({ url: 'redis://redis-master:6379' });
+    const pubClient = createClient({ url: 'redis://chat-redis-svc:6379' });
     const subClient = pubClient.duplicate();
     
-    Promise.all([pubClient.connect(), subClient.connect()])
-
-        try {
-            io.adapter(createAdapter(pubClient, subClient));
-            console.log('Connected to Redis and Socket.IO adapter set up');
-        } catch (error) {
-            console.error('Error connecting to Redis:', error);
-        }
+    // 2. FIXED: Add error listeners to stop the warnings
+    pubClient.on('error', (err) => console.error('Redis pubClient Error:', err));
+    subClient.on('error', (err) => console.error('Redis subClient Error:', err));
+    
+    try {
+        await Promise.all([pubClient.connect(), subClient.connect()])
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log('Connected to Redis and Socket.IO adapter set up');
+    } catch (error) {
+        console.error('Error connecting to Redis:', error);
+    }
 
     try {
         await natsWrapper.connect(
