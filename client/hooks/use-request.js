@@ -17,11 +17,13 @@ export default ({ url, method, onSuccess }) => {
 
         } catch (err) {
             setErrors(
-                <div className="alert alert-danger mt-3">
-                    <h4>Ooops....</h4>
-                    <ul className="my-0">
+                <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="font-bold text-sm">Ooops....</span>
+                    </div>
+                    <ul className="list-disc pl-5 text-xs space-y-1">
                         {err.response.data.errors.map(err => (
-                            <li key={err.message}>{err.message}</li>
+                            <li key={err.message} className="font-medium">{err.message}</li>
                         ))}
                     </ul>
                 </div>

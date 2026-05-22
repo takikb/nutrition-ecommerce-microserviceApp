@@ -58,13 +58,13 @@ router.post(
       .isIn(Object.values(PrimaryHealthGoals))
       .withMessage('Invalid primary health goal specified'),
 
-    body('healthData.medicalConditions')
+    body('healthData.medicalCondition')
       .if(body('role').equals(UserRole.CUSTOMER))
       .optional()
       .isArray()
       .withMessage('Medical conditions must be an array'),
 
-    body('healthData.allergies')
+    body('healthData.allergy')
       .if(body('role').equals(UserRole.CUSTOMER))
       .optional()
       .isArray()
