@@ -1,3 +1,22 @@
+# ==========================================
+# Python AI Service Ignores
+# ==========================================
+
+# Ignore the virtual environment folder entirely
+**/venv/
+**/ENV/
+
+# Ignore Python compiled cache files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Ignore local replica databases
+**/ai_replica.db
+**/data/
+Why this 
+
 # Node
 node_modules/
 npm-debug.log
