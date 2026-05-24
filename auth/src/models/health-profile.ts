@@ -74,6 +74,8 @@ interface HealthProfileDoc extends mongoose.Document {
     medicalCondition: string[];
     allergy: string[];
     primaryHealthGoal: PrimaryHealthGoals;
+
+    version: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -134,12 +136,21 @@ const healthProfileSchema = new mongoose.Schema({
     
 }, {
     timestamps: true,
+    optimisticConcurrency: true,
     toJSON: {
         transform(doc, ret: any) {
             ret.id = ret._id;
             delete ret._id;
             delete ret.__v;
         }
+    }
+});
+
+healthProfileSchema.set('versionKey', 'version');
+
+healthProfileSchema.pre('save', function() {
+    if (!this.isNew) {
+        this.increment();
     }
 });
 

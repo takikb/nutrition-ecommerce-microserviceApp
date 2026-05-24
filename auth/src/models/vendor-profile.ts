@@ -29,6 +29,7 @@ interface VendorProfileDoc extends mongoose.Document {
     isSuspended: boolean
     createdAt: Date
     updatedAt: Date
+    version: number
 }
 
 const vendorProfileSchema = new mongoose.Schema({
@@ -76,7 +77,7 @@ const vendorProfileSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-
+    optimisticConcurrency: true,
     toJSON: {
         transform(doc, ret: any) {
             ret.id = ret._id;
@@ -85,6 +86,14 @@ const vendorProfileSchema = new mongoose.Schema({
         }
     }
 })
+
+vendorProfileSchema.set('versionKey', 'version');
+
+vendorProfileSchema.pre('save', function() {
+    if (!this.isNew) {
+        this.increment();
+    }
+});
 
 vendorProfileSchema.statics.build = (attrs: VendorProfileAttrs) => {
     return new VendorProfile(attrs);

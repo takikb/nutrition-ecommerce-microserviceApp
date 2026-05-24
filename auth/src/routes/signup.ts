@@ -7,7 +7,11 @@ import { UserRole } from '../models/user';
 import { User } from '../models/user';
 import { VendorProfile } from '../models/vendor-profile';
 import { HealthProfile, Gender, PrimaryHealthGoals, ActivityLevel } from '../models/health-profile';
-import { BadRequestError, validateRequest } from '@d-ziet/common-lib';
+import { BadRequestError, validateRequest, MedicalCondition, Allergy,  } from '@d-ziet/common-lib';
+import { natsWrapper } from '../nats-wrapper';
+import { UserCreatedPublisher } from '../events/publishers/user-created-publisher';
+import { HealthProfileCreatedPublisher } from '../events/publishers/health-profile-created-publisher';
+import { VendorProfileCreatedPublisher } from '../events/publishers/vendor-profile-created-publisher';
 
 const router = express.Router();
 
@@ -125,14 +129,16 @@ router.post(
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    let user, healthProfile, vendorProfile;
+
     try {
       // Create and save user
-      const user = User.build({ email, password, fullName, role });
+      user = User.build({ email, password, fullName, role });
       await user.save({ session });
 
       // Create role-specific profiles
       if (role === UserRole.CUSTOMER) {
-        const healthProfile = HealthProfile.build({
+        healthProfile = HealthProfile.build({
           userId: user._id.toString(),
           gender: healthData.gender,
           dateOfBirth: new Date(healthData.dateOfBirth),
@@ -148,7 +154,7 @@ router.post(
       }
 
       if (role === UserRole.VENDOR) {
-        const vendorProfile = VendorProfile.build({
+        vendorProfile = VendorProfile.build({
           userId: user._id.toString(),
           displayName: vendorData.displayName,
           bio: vendorData.bio || '',
@@ -162,7 +168,59 @@ router.post(
       // Commit transaction
       await session.commitTransaction();
 
-      // Generate JWT
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+
+    } finally {
+      session.endSession();
+    }
+
+    await new UserCreatedPublisher(natsWrapper.client).publish({
+        id: user._id.toString(),
+        version: user.version,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        isActive: user.isActive
+    });
+
+    // 2. Publish HealthProfileCreated if Customer
+    if (role === UserRole.CUSTOMER && healthProfile) {
+        await new HealthProfileCreatedPublisher(natsWrapper.client).publish({
+            id: healthProfile._id.toString(),
+            userId: healthProfile.userId,
+            version: healthProfile.version,
+            gender: healthProfile.gender,
+            dateOfBirth: healthProfile.dateOfBirth,
+            heightCM: healthProfile.heightCM,
+            weightKG: healthProfile.weightKG,
+            calculatedBMI: healthProfile.calculatedBMI,
+            calculatedBMR: healthProfile.calculatedBMR,
+            calculatedTDEE: healthProfile.calculatedTDEE,
+            activityLevel: healthProfile.activityLevel,
+            primaryHealthGoal: healthProfile.primaryHealthGoal,
+            medicalCondition: (healthProfile.medicalCondition || []) as MedicalCondition[],
+            allergy: (healthProfile.allergy || []) as Allergy[]
+        });
+    }
+
+    // 3. Publish VendorProfileCreated if Vendor
+    if (role === UserRole.VENDOR && vendorProfile) {
+        await new VendorProfileCreatedPublisher(natsWrapper.client).publish({
+            id: vendorProfile._id.toString(),
+            userId: vendorProfile.userId,
+            version: vendorProfile.version,
+            displayName: vendorProfile.displayName,
+            phoneNumber: vendorProfile.phoneNumber,
+            location: {
+              address: vendorProfile.location.address,
+              wilaya: vendorProfile.location.wilaya,
+            }
+        });
+    }
+
+         // Generate JWT
       const userJwt = jwt.sign(
         {
           id: user._id,
@@ -186,15 +244,7 @@ router.post(
           role: user.role,
         },
       });
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
   }
 );
 
 export { router as signupRouter };
-
-

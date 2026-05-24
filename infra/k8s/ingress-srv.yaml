@@ -43,6 +43,13 @@ spec:
                 name: chat-srv
                 port:
                   number: 3000
+          - path: /api/v1/recommendations/?(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ai-recommendation-srv
+                port:
+                  number: 8000
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:

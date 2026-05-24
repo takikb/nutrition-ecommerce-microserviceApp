@@ -35,6 +35,7 @@ interface UserDoc extends mongoose.Document {
     isActive: boolean
     createdAt: Date
     updatedAt: Date
+    version: number
 }
 
 const userSchema = new mongoose.Schema({
@@ -71,7 +72,7 @@ const userSchema = new mongoose.Schema({
     }, {
         
         timestamps: true, 
-
+        optimisticConcurrency: true,
         toJSON: {
             transform(doc, ret: any) {
                 ret.id = ret._id
@@ -82,6 +83,14 @@ const userSchema = new mongoose.Schema({
         }
     }
 )
+
+userSchema.set('versionKey', 'version');
+
+userSchema.pre('save', function() {
+    if (!this.isNew) {
+        this.increment();
+    }
+});
 
 // any time we try to save a user, this function will run first
 userSchema.pre('save', async function() {
