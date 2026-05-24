@@ -1,0 +1,21 @@
+# Web Framework & Validation
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Database (SQLAlchemy)
+sqlalchemy
+
+# Machine Learning & Math
+scikit-learn
+numpy
+pandas
+joblib
+
+# Event Bus & Messaging (NATS Streaming)
+nats-py
+asyncio-nats-streaming
+
+# Force compatible protocol buffers for NATS Streaming
+protobuf<=3.20.3
