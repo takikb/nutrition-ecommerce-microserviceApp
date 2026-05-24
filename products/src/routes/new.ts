@@ -1,14 +1,14 @@
 import express, { Request, Response } from 'express'
 import { body } from 'express-validator'
-import { requireAuth, validateRequest } from '@d-ziet/common-lib'
-import { ProductCategory, Allergy, MedicalCondition } from '../models/product'
+import { requireAuth, validateRequest, Allergy, MedicalCondition, requireRole } from '@d-ziet/common-lib'
+import { ProductCategory } from '../models/product'
 import { Product } from '../models/product'
 import { ProductCreatedPublisher } from '../events/publishers/product-created-publisher'
 import { natsWrapper } from '../nats-wrapper'
 
 const router = express.Router()
 
-router.post('/api/products', requireAuth, [
+router.post('/api/products', requireAuth, requireRole(['vendor']), [
     body('title')
         .not()
         .isEmpty()
@@ -53,13 +53,9 @@ router.post('/api/products', requireAuth, [
         .isArray()
         .isIn(Object.values(Allergy))
         .withMessage('Contains allergens must be an array'),
-    body('MedicalCondition')
-        .isArray()
-        .isIn(Object.values(MedicalCondition))
-        .withMessage('Medical conditions must be an array'),
 
 ], validateRequest, async (req: Request, res: Response) => {
-    const { title, description, priceDZD, images, nutritionTableImage, category, calories, proteinGrams, carbsGrams, fatGrams, containsAllergens, MedicalCondition } = req.body;
+    const { title, description, priceDZD, images, nutritionTableImage, category, calories, proteinGrams, carbsGrams, fatGrams, containsAllergens } = req.body;
 
     const product = Product.build({
         title,
@@ -74,7 +70,6 @@ router.post('/api/products', requireAuth, [
         carbsGrams,
         fatGrams,
         containsAllergens: containsAllergens || [Allergy.NONE],
-        MedicalCondition: MedicalCondition || [MedicalCondition.NONE]
     });
     await product.save()
 
@@ -96,7 +91,6 @@ router.post('/api/products', requireAuth, [
         carbsGrams: product.carbsGrams,
         fatGrams: product.fatGrams,
         containsAllergens: product.containsAllergens,
-        MedicalCondition: product.MedicalCondition,
 
         verificationStatus: product.verificationStatus,
         status: product.status,
