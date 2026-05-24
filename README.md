@@ -17,9 +17,30 @@ Run `skaffold dev ` in the root directory.
 
 if you are using minikube, start it at first `minikube start`, then start a tunnel `minikube tunnel`, then run `skaffold dev`
 
-
 ```
 nutrition
+├─ ai-service
+│  ├─ ai_replica.db
+│  ├─ ml_pipeline
+│  │  ├─ models
+│  │  │  └─ kmeans_model.pkl
+│  │  └─ train_kmeans.py
+│  ├─ requirements.txt
+│  └─ src
+│     ├─ api
+│     │  └─ recommendations.py
+│     ├─ database
+│     │  ├─ database.py
+│     │  └─ models.py
+│     ├─ events
+│     ├─ main.py
+│     ├─ schemas
+│     │  └─ api_schemas.py
+│     └─ services
+│        ├─ nutrition_calc.py
+│        ├─ stage1_rules.py
+│        ├─ stage2_cluster.py
+│        └─ stage3_ranking.py
 ├─ auth
 │  ├─ .dockerignore
 │  ├─ Dockerfile
@@ -34,6 +55,7 @@ nutrition
 │  │  │  └─ vendor-profile.ts
 │  │  ├─ routes
 │  │  │  ├─ current-user.ts
+│  │  │  ├─ getAll.ts
 │  │  │  ├─ signin.ts
 │  │  │  ├─ signout.ts
 │  │  │  ├─ signup.ts
@@ -92,20 +114,43 @@ nutrition
 │  ├─ api
 │  │  └─ build-client.js
 │  ├─ components
-│  │  └─ header.js
+│  │  ├─ header.js
+│  │  └─ onboarding
+│  │     ├─ account-info.js
+│  │     ├─ health-goals.js
+│  │     ├─ physical-profile.js
+│  │     ├─ role-selection.js
+│  │     ├─ step-wrapper.js
+│  │     └─ store-details.js
 │  ├─ Dockerfile
 │  ├─ hooks
 │  │  └─ use-request.js
 │  ├─ next.config.js
 │  ├─ package-lock.json
 │  ├─ package.json
-│  └─ pages
-│     ├─ auth
-│     │  ├─ signin.js
-│     │  ├─ signout.js
-│     │  └─ signup.js
-│     ├─ index.js
-│     └─ _app.js
+│  ├─ pages
+│  │  ├─ auth
+│  │  │  ├─ signin.js
+│  │  │  ├─ signout.js
+│  │  │  └─ signup.js
+│  │  ├─ chat
+│  │  ├─ index.js
+│  │  ├─ orders
+│  │  ├─ products
+│  │  │  ├─ new-product.js
+│  │  │  ├─ [productId]
+│  │  │  │  └─ edit.js
+│  │  │  └─ [productId].js
+│  │  ├─ vendor
+│  │  │  └─ products.js
+│  │  ├─ _app.js
+│  │  └─ _document.js
+│  ├─ postcss.config.js
+│  ├─ src
+│  │  └─ types.js
+│  ├─ styles
+│  │  └─ globals.css
+│  └─ tailwind.config.js
 ├─ common-lib
 │  ├─ package-lock.json
 │  ├─ package.json
@@ -171,6 +216,7 @@ nutrition
 │  │  │  │     └─ product-updated-listener.test.ts
 │  │  │  └─ publishers
 │  │  │     ├─ order-cancelled-publisher.ts
+│  │  │     ├─ order-completed-publisher.ts
 │  │  │     └─ order-created-publisher.ts
 │  │  ├─ index.ts
 │  │  ├─ models
@@ -178,11 +224,14 @@ nutrition
 │  │  │  └─ product.ts
 │  │  ├─ nats-wrapper.ts
 │  │  ├─ routes
+│  │  │  ├─ complete.ts
 │  │  │  ├─ delete.ts
+│  │  │  ├─ getAll.ts
 │  │  │  ├─ index.ts
 │  │  │  ├─ new.ts
 │  │  │  ├─ show.ts
 │  │  │  └─ __test__
+│  │  │     ├─ complete.test.ts
 │  │  │     ├─ delete.test.ts
 │  │  │     ├─ index.test.ts
 │  │  │     ├─ new.test.ts
@@ -220,9 +269,12 @@ nutrition
 │  │  ├─ routes
 │  │  │  ├─ delete.ts
 │  │  │  ├─ index.ts
+│  │  │  ├─ my-products.ts
 │  │  │  ├─ new.ts
+│  │  │  ├─ pending-products.ts
 │  │  │  ├─ show.ts
 │  │  │  ├─ update.ts
+│  │  │  ├─ verify.ts
 │  │  │  └─ __test__
 │  │  │     ├─ delete.test.ts
 │  │  │     ├─ index.test.ts

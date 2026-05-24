@@ -1,5 +1,6 @@
 import { Subjects } from "./subjects";
-import { ProductCategory, Allergy, ProductStatus, ProductVerificationStatus, PrimaryHealthGoals, MedicalCondition } from "./types/product";
+import { ProductCategory, ProductStatus, ProductVerificationStatus} from "./types/product";
+import { Allergy, MedicalCondition, PrimaryHealthGoals } from "./types/health-profile";
 
 export interface ProductCreatedEvent {
     subject: Subjects.ProductCreated
@@ -20,7 +21,6 @@ export interface ProductCreatedEvent {
         carbsGrams: number;
         fatGrams: number;
         containsAllergens: Allergy[];
-        MedicalCondition: MedicalCondition[];
         
         verificationStatus: ProductVerificationStatus;
         
