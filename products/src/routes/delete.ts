@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
 import { Product, ProductStatus } from '../models/product';
-import { NotFoundError, requireAuth, NotAuthorizedError } from '@d-ziet/common-lib';
+import { NotFoundError, requireAuth, NotAuthorizedError, requireRole } from '@d-ziet/common-lib';
 import { ProductDeletedPublisher } from '../events/publishers/product-deleted-publisher';
 import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
-router.delete('/api/products/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/api/products/:id', requireAuth, requireRole(['admin', 'vendor']), async (req: Request, res: Response) => {
 
     const product = await Product.findById(req.params.id)
     

@@ -57,7 +57,6 @@ router.put('/api/products/:id/verify',
             carbsGrams: product.carbsGrams,
             fatGrams: product.fatGrams,
             containsAllergens: product.containsAllergens,
-            MedicalCondition: product.MedicalCondition,
 
             verificationStatus: product.verificationStatus,
             status: product.status,

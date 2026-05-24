@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { Allergy, PrimaryHealthGoals } from '@d-ziet/common-lib';
 
 export enum ProductCategory {
     MEAL_PREP = 'meal_prep',
@@ -6,38 +7,6 @@ export enum ProductCategory {
     SUPPLEMENT = 'supplement',
     GROCERY = 'grocery',
     DRINK = 'drink'
-}
-
-export enum MedicalCondition {
-    DIABETES_TYPE_1 = 'diabetes_type_1',
-    DIABETES_TYPE_2 = 'diabetes_type_2',
-    HYPERTENSION = 'hypertension',
-    HIGH_CHOLESTEROL = 'high_cholesterol',
-    CELIAC_DISEASE = 'celiac_disease',
-    IBS = 'ibs',
-    ANEMIA = 'anemia',
-    THYROID_DISORDER = 'thyroid_disorder',
-    PCOS = 'pcos',
-    NONE = 'none'
-}
-
-export enum Allergy {
-    LACTOSE = 'lactose',
-    GLUTEN = 'gluten',
-    PEANUTS = 'peanuts',
-    TREE_NUTS = 'tree_nuts',
-    EGGS = 'eggs',
-    FISH = 'fish',
-    SHELLFISH = 'shellfish',
-    STRAWBERRY = 'strawberry',
-    NONE = 'none'
-}
-
-export enum PrimaryHealthGoals {
-    WEIGHT_LOSS = 'weight_loss',
-    MUSCLE_GAIN = 'muscle_gain',
-    MAINTENANCE = 'maintenance',
-    IMPROVED_ENERGY = 'improved_energy'
 }
 
 export enum ProductVerificationStatus {
@@ -70,7 +39,6 @@ interface ProductAttrs {
     carbsGrams: number;
     fatGrams: number;
     containsAllergens: Allergy[];
-    MedicalCondition: MedicalCondition[];
 }
 
 interface ProductModel extends mongoose.Model<ProductDoc> {
@@ -90,7 +58,6 @@ interface ProductDoc extends mongoose.Document {
     carbsGrams: number;
     fatGrams: number;
     containsAllergens: Allergy[];
-    MedicalCondition: MedicalCondition[];
     
     // Status tracking
     verificationStatus: ProductVerificationStatus;
@@ -148,7 +115,6 @@ const productSchema = new mongoose.Schema({
     inquiryCount: { type: Number, default: 0 },
 
     aiAnalyzed: { type: Boolean, default: false },
-    MedicalCondition:[{ type: String, enum: Object.values(MedicalCondition), default: [] }],
     targetGoals:[{ type: String, enum: Object.values(PrimaryHealthGoals), default: [] }],
 
     isAvailable: { type: Boolean, default: true }
