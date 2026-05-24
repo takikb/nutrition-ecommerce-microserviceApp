@@ -1,0 +1,29 @@
+# ai-service/.dockerignore
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Local database file (Crucial: do not copy your local developer DB into the container)
+ai_replica.db
+data/
+
+# Version control
+.git/
+.gitignore
+
+# Docker & Kubernetes config files (not needed inside the running container)
+Dockerfile
+.dockerignore
+*.yaml
+*.yml
