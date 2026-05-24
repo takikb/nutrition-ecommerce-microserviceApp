@@ -17,10 +17,13 @@ Run `skaffold dev ` in the root directory.
 
 if you are using minikube, start it at first `minikube start`, then start a tunnel `minikube tunnel`, then run `skaffold dev`
 
+
 ```
 nutrition
 ├─ ai-service
+│  ├─ .dockerignore
 │  ├─ ai_replica.db
+│  ├─ Dockerfile
 │  ├─ ml_pipeline
 │  │  ├─ models
 │  │  │  └─ kmeans_model.pkl
@@ -33,6 +36,7 @@ nutrition
 │     │  ├─ database.py
 │     │  └─ models.py
 │     ├─ events
+│     │  └─ nats_listener.py
 │     ├─ main.py
 │     ├─ schemas
 │     │  └─ api_schemas.py
@@ -48,11 +52,20 @@ nutrition
 │  ├─ package.json
 │  ├─ src
 │  │  ├─ app.ts
+│  │  ├─ events
+│  │  │  └─ publishers
+│  │  │     ├─ health-profile-created-publisher.ts
+│  │  │     ├─ health-profile-updated-publisher.ts
+│  │  │     ├─ user-created-publisher.ts
+│  │  │     ├─ user-updated-publisher.ts
+│  │  │     ├─ vendor-profile-created-publisher.ts
+│  │  │     └─ vendor-profile-updated-publisher.ts
 │  │  ├─ index.ts
 │  │  ├─ models
 │  │  │  ├─ health-profile.ts
 │  │  │  ├─ user.ts
 │  │  │  └─ vendor-profile.ts
+│  │  ├─ nats-wrapper.ts
 │  │  ├─ routes
 │  │  │  ├─ current-user.ts
 │  │  │  ├─ getAll.ts
@@ -66,8 +79,10 @@ nutrition
 │  │  │     └─ signup.test.ts
 │  │  ├─ services
 │  │  │  └─ password.ts
-│  │  └─ test
-│  │     └─ setup.ts
+│  │  ├─ test
+│  │  │  └─ setup.ts
+│  │  └─ __mocks__
+│  │     └─ nats-wrapper.ts
 │  └─ tsconfig.json
 ├─ chat
 │  ├─ .dockerignore
@@ -165,6 +180,8 @@ nutrition
 │  │  ├─ events
 │  │  │  ├─ base-listener.ts
 │  │  │  ├─ base-publisher.ts
+│  │  │  ├─ health-profile-created-event.ts
+│  │  │  ├─ health-profile-updated-event.ts
 │  │  │  ├─ order-cancelled-event.ts
 │  │  │  ├─ order-completed-event.ts
 │  │  │  ├─ order-created-event.ts
@@ -172,9 +189,15 @@ nutrition
 │  │  │  ├─ product-deleted-event.ts
 │  │  │  ├─ product-updated-event.ts
 │  │  │  ├─ subjects.ts
-│  │  │  └─ types
-│  │  │     ├─ order-status.ts
-│  │  │     └─ product.ts
+│  │  │  ├─ types
+│  │  │  │  ├─ health-profile.ts
+│  │  │  │  ├─ order-status.ts
+│  │  │  │  ├─ product.ts
+│  │  │  │  └─ user.ts
+│  │  │  ├─ user-created-event.ts
+│  │  │  ├─ user-updated-event.ts
+│  │  │  ├─ vendor-profile-created-event.ts
+│  │  │  └─ vendor-profile-updated-event.ts
 │  │  ├─ index.ts
 │  │  └─ middlewares
 │  │     ├─ current-user.ts
@@ -185,6 +208,7 @@ nutrition
 │  └─ tsconfig.json
 ├─ infra
 │  └─ k8s
+│     ├─ ai-recommendation-depl.yaml
 │     ├─ auth-depl.yaml
 │     ├─ auth-mongo-depl.yaml
 │     ├─ chat-depl.yaml
