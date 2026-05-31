@@ -1,8 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Material Symbols font-variation-settings */
+@layer base {
+  body {
+    @apply bg-background text-on-background antialiased min-h-screen;
+    font-family: 'Manrope', sans-serif;
+  }
+}
+
+/* Material Symbols font-variation-settings configuration */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   font-family: 'Material Symbols Outlined';
@@ -21,11 +31,11 @@
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Entry animation */
+/* Transition & entry animation curves */
 @keyframes fadeScaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(10px);
+    transform: scale(0.97) translateY(8px);
   }
   to {
     opacity: 1;
@@ -33,22 +43,18 @@
   }
 }
 
-.animate-enter {
-  animation: fadeScaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 0;
-}
-
+.animate-enter,
 .animate-fade-in-up {
-  animation: fadeScaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeScaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
 
-/* Input autofill styling fix for Tailwind */
+/* Input autofill styling fix for Tailwind using the theme design colors */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
-  -webkit-text-fill-color: #161d16 !important;
+  -webkit-text-fill-color: #1b1b1e !important;
   transition: background-color 5000s ease-in-out 0s;
 }

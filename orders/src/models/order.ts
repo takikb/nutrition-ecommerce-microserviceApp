@@ -4,14 +4,24 @@ import { ProductDoc } from "./product";
 
 interface OrderAttrs {
     userId: string;
+    vendorId: string;
     status: OrderStatus;
     product: ProductDoc;
+    quantity: number;
+    deliveryAddress: string;
+    phoneNumber: string;
+    totalPriceDZD: number;
 }
 
 interface OrderDoc extends mongoose.Document {
     userId: string;
+    vendorId: string;
     status: OrderStatus;
     product: ProductDoc;
+    quantity: number;
+    deliveryAddress: string;
+    phoneNumber: string;
+    totalPriceDZD: number;
     version: number;
 }
 
@@ -21,6 +31,10 @@ interface OrderModel extends mongoose.Model<OrderDoc> {
 
 const orderSchema = new mongoose.Schema({
     userId: {
+        type: String,
+        required: true
+    },
+    vendorId: {
         type: String,
         required: true
     },
@@ -34,6 +48,25 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
         required: true
+    },
+    quantity: {
+        type: Number,
+        required: true,
+        min: 1,
+        default: 1
+    },
+    deliveryAddress: {
+        type: String,
+        required: true
+    },
+    phoneNumber: {
+        type: String,
+        required: true
+    },
+    totalPriceDZD: {
+        type: Number,
+        required: true,
+        min: 0
     }
 }, {
     timestamps: true,

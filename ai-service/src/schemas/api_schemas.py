@@ -66,10 +66,12 @@ class ProductEventData(BaseModel):
     fatGrams: float
     containsAllergens: List[str] = []
     MedicalCondition: List[str] = []
+    images: List[str] = []
     isAvailable: Optional[bool] = True
     status: Optional[str] = None
     vendorId: Optional[str] = None
     category: Optional[str] = None
+    verificationStatus: Optional[str] = 'pending' # pending, approved, rejected
 
 
 # 2. API REQUEST & RESPONSE SCHEMAS (For the Next.js Frontend)
@@ -89,6 +91,7 @@ class RecommendedProductResponse(BaseModel):
     fats_g: float
     match_score: float # Percentage match from AI Stage 3
     recommended_portions: float # Added to display exact sizing to the user!
+    images: List[str] = []
 
 
 class TargetMacrosSchema(BaseModel):

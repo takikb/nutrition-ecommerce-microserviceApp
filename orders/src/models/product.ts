@@ -5,6 +5,7 @@ interface ProductAttrs {
     title: string;
     priceDZD: number;
     vendorId: string;
+    images: string[];
 }
 
 export interface ProductDoc extends mongoose.Document{
@@ -12,6 +13,7 @@ export interface ProductDoc extends mongoose.Document{
     priceDZD: number;
     version: number;
     vendorId: string;
+    images: string[];
 }
 
 interface ProductModel extends mongoose.Model<ProductDoc> {
@@ -32,6 +34,10 @@ const productSchema = new mongoose.Schema({
     vendorId: { 
         type: String, 
         required: true 
+    },
+    images: {
+        type: [String],
+        default: []
     }
 },{
     optimisticConcurrency: true,
@@ -63,7 +69,8 @@ productSchema.statics.build = (attrs: ProductAttrs) => {
         _id: attrs.id,
         title: attrs.title,
         priceDZD: attrs.priceDZD,
-        vendorId: attrs.vendorId
+        vendorId: attrs.vendorId,
+        images: attrs.images
     });
 }
 

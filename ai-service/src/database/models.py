@@ -45,6 +45,9 @@ class LocalProduct(Base):
     contains_allergens: Mapped[list[str]] = mapped_column(JSON, default=list)
     medical_conditions: Mapped[list[str]] = mapped_column(JSON, default=list)
     
+    # Store the hosted Cloudinary image URL array as JSON
+    images: Mapped[list[str]] = mapped_column(JSON, default=list)
+
     # Status tracking
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     

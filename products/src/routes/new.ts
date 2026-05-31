@@ -82,7 +82,7 @@ router.post('/api/products', requireAuth, requireRole(['vendor']), [
 
         images: product.images,
         nutritionTableImage: product.nutritionTableImage,
-            
+                
         // TypeScript Enums sometimes need to be casted when coming from Mongoose Docs
         category: product.category as any,
         vendorId: product.vendorId,
@@ -94,8 +94,14 @@ router.post('/api/products', requireAuth, requireRole(['vendor']), [
 
         verificationStatus: product.verificationStatus,
         status: product.status,
-        targetGoals: product.targetGoals
+        targetGoals: product.targetGoals,
+
+        rejectedAt: product.rejectedAt,
+        rejectionReason: product.rejectionReason,
+            
     });
+    
+
 
     res.status(201).send(product);
 })

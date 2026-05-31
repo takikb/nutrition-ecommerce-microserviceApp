@@ -1,6 +1,32 @@
 import mongoose from "mongoose"
 import { app } from './app'
 import { natsWrapper } from "./nats-wrapper"
+import { User } from "./models/user"
+import { UserRole } from "@d-ziet/common-lib"
+
+const seedAdmin = async () => {
+    try {
+        const adminEmail = 'admin@nutrition.dev';
+        
+        // 1 Check if the admin already exists
+        const adminExists = await User.findOne({ email: adminEmail });
+
+        if (!adminExists) {
+            // 2. Build the admin
+            const admin = User.build({
+                email: adminEmail,
+                password: 'admin123', 
+                fullName: 'System Administrator',
+                role: UserRole.ADMIN // 'admin'
+            });
+
+            await admin.save();
+            console.log('Admin user automatically seeded: admin@nutrition.dev');
+        }
+    } catch (err) {
+        console.error('Failed to seed admin user', err);
+    }
+};
 
 const start = async () => {
   if (!process.env.JWT_KEY) {
@@ -41,6 +67,9 @@ const start = async () => {
 
     await mongoose.connect(process.env.MONGO_URI)
     console.log('Connected to MongoDB')
+
+    await seedAdmin() // Seed the admin user
+    
   } catch (error) {
     console.error('Error connecting to MongoDB:', error)
   }

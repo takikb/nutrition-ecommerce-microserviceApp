@@ -4,6 +4,7 @@ import { body } from 'express-validator';
 import { Product, ProductVerificationStatus } from '../models/product';
 import { natsWrapper } from '../nats-wrapper';
 import { ProductCreatedPublisher } from '../events/publishers/product-created-publisher';
+import { ProductUpdatedPublisher } from '../events/publishers/product-updated-publisher';
 
 const router = express.Router();
 
@@ -39,7 +40,7 @@ router.put('/api/products/:id/verify',
 
         // Broadcast the update so Chat/Orders know the product is now "Approved" so they can add it to their db
 
-        await new ProductCreatedPublisher(natsWrapper.client).publish({
+        await new ProductUpdatedPublisher(natsWrapper.client).publish({
             id: product._id.toString(),
             version: product.version,
             title: product.title,

@@ -8,7 +8,7 @@ export class ProductCreatedListener extends Listener<ProductCreatedEvent> {
     queueGroupName = queueGroupName;
 
     async onMessage(data: ProductCreatedEvent['data'], msg: Message) {
-        const { id, title, priceDZD, vendorId, verificationStatus } = data;
+        const { id, title, priceDZD, vendorId, verificationStatus, images } = data;
         
         if (verificationStatus !== 'approved') {
             // If the product isn't approved, we don't want to add it to our Orders DB since it's not "live" yet.
@@ -20,7 +20,8 @@ export class ProductCreatedListener extends Listener<ProductCreatedEvent> {
             id,
             title,
             priceDZD,
-            vendorId
+            vendorId,
+            images
         });
         await product.save();
         

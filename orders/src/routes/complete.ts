@@ -39,12 +39,17 @@ router.put('/api/orders/:orderId', requireAuth, requireRole(['vendor']), async (
         version: order.version,
         status: order.status,
         userId: order.userId,
+        vendorId: order.vendorId,
         product: {
             id: order.product._id.toString(),
             title: order.product.title,
             priceDZD: order.product.priceDZD,
             vendorId: order.product.vendorId
-        }
+        },
+        quantity: order.quantity,
+        deliveryAddress: order.deliveryAddress,
+        phoneNumber: order.phoneNumber,
+        totalPriceDZD: order.totalPriceDZD
     });
 
     res.status(200).send(order);
