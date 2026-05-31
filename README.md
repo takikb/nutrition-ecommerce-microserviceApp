@@ -22,7 +22,6 @@ if you are using minikube, start it at first `minikube start`, then start a tunn
 nutrition
 ├─ ai-service
 │  ├─ .dockerignore
-│  ├─ ai_replica.db
 │  ├─ Dockerfile
 │  ├─ ml_pipeline
 │  │  ├─ models
@@ -129,14 +128,7 @@ nutrition
 │  ├─ api
 │  │  └─ build-client.js
 │  ├─ components
-│  │  ├─ header.js
-│  │  └─ onboarding
-│  │     ├─ account-info.js
-│  │     ├─ health-goals.js
-│  │     ├─ physical-profile.js
-│  │     ├─ role-selection.js
-│  │     ├─ step-wrapper.js
-│  │     └─ store-details.js
+│  │  └─ header.js
 │  ├─ Dockerfile
 │  ├─ hooks
 │  │  └─ use-request.js
@@ -144,6 +136,10 @@ nutrition
 │  ├─ package-lock.json
 │  ├─ package.json
 │  ├─ pages
+│  │  ├─ admin
+│  │  │  └─ audit.js
+│  │  ├─ ai-recommendations
+│  │  │  └─ index.js
 │  │  ├─ auth
 │  │  │  ├─ signin.js
 │  │  │  ├─ signout.js
@@ -152,11 +148,9 @@ nutrition
 │  │  ├─ index.js
 │  │  ├─ orders
 │  │  ├─ products
-│  │  │  ├─ new-product.js
-│  │  │  ├─ [productId]
-│  │  │  │  └─ edit.js
 │  │  │  └─ [productId].js
 │  │  ├─ vendor
+│  │  │  ├─ orders.js
 │  │  │  └─ products.js
 │  │  ├─ _app.js
 │  │  └─ _document.js

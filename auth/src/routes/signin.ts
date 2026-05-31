@@ -16,14 +16,11 @@ router.post('/api/users/signin',
             .trim()
             .notEmpty() 
             .withMessage('You must supply a password'),
-        body('role')
-            .isIn([UserRole.CUSTOMER, UserRole.VENDOR])
-            .withMessage('Invalid role specified')
     ], 
     validateRequest,
     async (req: Request, res: Response) => {
 
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
@@ -32,7 +29,7 @@ router.post('/api/users/signin',
 
     const passwordsMatch = await Password.compare(existingUser.password, password);
 
-    if (!passwordsMatch || existingUser.role !== role) {
+    if (!passwordsMatch) {
         throw new BadRequestError('Invalid credentials');
     }
 

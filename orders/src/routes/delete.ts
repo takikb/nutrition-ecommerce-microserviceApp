@@ -28,12 +28,17 @@ router.delete('/api/orders/:orderId',requireAuth, requireRole(['customer']), asy
         version: order.version,
         status: order.status,
         userId: order.userId,
+        vendorId: order.vendorId,
         product: {
             id: JSON.stringify(order.product._id),
             title: order.product.title,
             priceDZD: order.product.priceDZD,
             vendorId: order.product.vendorId
         },
+        quantity: order.quantity,
+        deliveryAddress: order.deliveryAddress,
+        phoneNumber: order.phoneNumber,
+        totalPriceDZD: order.totalPriceDZD
     });
 
     res.status(204).send(order);

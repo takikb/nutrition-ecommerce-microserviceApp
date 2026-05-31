@@ -72,7 +72,8 @@ def get_user_feed(user_id: str, db: Session = Depends(get_db)):
             "carbs_g": p.carbs_g,
             "fats_g": p.fats_g,
             "match_score": round(p.match_score * 100, 2),
-            "recommended_portions": p.recommended_portions # Mapped here!
+            "recommended_portions": p.recommended_portions,
+            "images": p.images
         })
 
     # 7. RETURN BOTH TARGETS AND RECOMMENDED PRODUCTS!

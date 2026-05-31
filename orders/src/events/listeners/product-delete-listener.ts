@@ -26,12 +26,17 @@ export class ProductDeletedListener extends Listener<ProductDeletedEvent> {
                 version: order.version,
                 status: order.status,
                 userId: order.userId,
+                vendorId: order.vendorId,
                 product: {
                     id: order.product._id.toString(),
                     title: order.product.title,
                     priceDZD: order.product.priceDZD,
                     vendorId: order.product.vendorId
                 },
+                quantity: order.quantity,
+                deliveryAddress: order.deliveryAddress,
+                phoneNumber: order.phoneNumber,
+                totalPriceDZD: order.totalPriceDZD
             });
         }
 

@@ -117,7 +117,22 @@ async def run_nats_listener():
             
             db = SessionLocal()
             try:
-                # 1. Prepare Macros for the ML Model
+                if data.verificationStatus != 'approved':
+                # If a product was previously approved but has now been edited, 
+                # rejected, or set back to pending, delete it from our local recommendations db.
+                    existing_product = db.query(LocalProduct).filter_by(id=data.id).first()
+                    if existing_product:
+                        db.delete(existing_product)
+                        db.commit()
+                        logger.info(f"Removed non-approved product from recommendations: {data.title} (Status: {data.verificationStatus})")
+                    else:
+                        logger.info(f"Skipped non-approved product event: {data.title} (Status: {data.verificationStatus})")
+                    
+                    # Acknowledge message processing is complete
+                    await sc.ack(msg)
+                    return
+
+            # 1. Prepare Macros for the ML Model
                 macros = {
                     "target_calories": float(data.calories),
                     "target_protein": float(data.proteinGrams),
@@ -144,6 +159,7 @@ async def run_nats_listener():
                 product.medical_conditions = data.MedicalCondition
                 product.is_available = data.isAvailable
                 product.cluster_id = assigned_cluster
+                product.images = data.images
                 
                 db.commit()
                 logger.info(f"💾 Saved Product: {data.title} (Cluster {assigned_cluster})")

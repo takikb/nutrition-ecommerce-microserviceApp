@@ -6,8 +6,14 @@ const router = express.Router();
 
 router.get('/api/orders', 
     requireAuth,
-    requireRole(['customer']), 
+    requireRole(['customer', 'vendor']), 
     async (req: Request, res: Response) => {
+        const {id, role} = req.currentUser!;
+        //vendor logic
+        if (role === 'vendor') {
+            const orders = await Order.find({ vendorId: id }).populate('product');
+            return res.send(orders);
+        }
 
         const orders = await Order.find({
             userId: req.currentUser!.id
