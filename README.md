@@ -18,6 +18,8 @@ Run `skaffold dev ` in the root directory.
 if you are using minikube, start it at first `minikube start`, then start a tunnel `minikube tunnel`, then run `skaffold dev`
 
 
+
+
 ```
 nutrition
 ├─ ai-service
@@ -145,9 +147,13 @@ nutrition
 │  │  │  ├─ signout.js
 │  │  │  └─ signup.js
 │  │  ├─ chat
+│  │  │  └─ index.js
 │  │  ├─ index.js
 │  │  ├─ orders
+│  │  │  ├─ index.js
+│  │  │  └─ [orderId].js
 │  │  ├─ products
+│  │  │  ├─ index.js
 │  │  │  └─ [productId].js
 │  │  ├─ vendor
 │  │  │  ├─ orders.js

@@ -5,8 +5,6 @@ interface conversationAttrs {
     customerId: string;
     vendorId: string;
     orderId?: string;
-    productTitle: string;
-    productPrice: number;
 }
 
 interface conversationDoc extends mongoose.Document {
@@ -16,9 +14,6 @@ interface conversationDoc extends mongoose.Document {
     vendorId: string;
 
     isActive: boolean;
-
-    productTitle: string;
-    productPrice: number;
 
     lastMessage?: string; // For quick preview in conversation list
     lastMessageAt?: Date; 
@@ -43,9 +38,6 @@ const conversationSchema = new mongoose.Schema({
 
     isActive: { type: Boolean, default: true },
 
-    productTitle: { type: String },
-    productPrice: { type: Number },
-    
     // For quick preview in conversation list
     lastMessage: { type: String },
     lastMessageAt: { type: Date }

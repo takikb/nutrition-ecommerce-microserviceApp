@@ -10,21 +10,35 @@ export class ProductCreatedListener extends Listener<ProductCreatedEvent> {
     async onMessage(data: ProductCreatedEvent['data'], msg: Message) {
         const { id, title, priceDZD, vendorId, verificationStatus, images } = data;
         
-        if (verificationStatus !== 'approved') {
-            // If the product isn't approved, we don't want to add it to our Orders DB since it's not "live" yet.
-            // We still want to ack the message so it doesn't get redelivered, but we won't add it to our DB until it's approved and we get a ProductUpdatedEvent with verificationStatus: "approved"
-            return msg.ack();
-        }
+        try {
+            // Defensively check if product already exists to prevent E11000 duplicate key errors
+            const existingProduct = await Product.findById(id);
+            if (existingProduct) {
+                // If it already exists, safely update the fields and acknowledge
+                existingProduct.set({ title, priceDZD, images });
+                await existingProduct.save();
+                return msg.ack();
+            }
 
-        const product = Product.build({
-            id,
-            title,
-            priceDZD,
-            vendorId,
-            images
-        });
-        await product.save();
-        
-        msg.ack();
+            if (verificationStatus !== 'approved') {
+                // If the product isn't approved, we don't want to add it to our Orders DB since it's not "live" yet.
+                return msg.ack();
+            }
+
+            const product = Product.build({
+                id,
+                title,
+                priceDZD,
+                vendorId,
+                images
+            });
+            await product.save();
+            
+            msg.ack();
+        } catch (err) {
+            console.error("Error processing ProductCreatedEvent in Orders service:", err);
+            // We do NOT call msg.ack() here if there's a database connection drop so NATS can retry,
+            // but the duplicate key errors are handled safely above.
+        }
     }
 }

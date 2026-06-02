@@ -1,7 +1,7 @@
-import { Listener, OrderCompletedEvent, Subjects } from "@d-ziet/common-lib";
 import { Message } from "node-nats-streaming";
-import { queueGroupName } from "./queue-group-name";
+import { Listener, Subjects, OrderCompletedEvent } from "@d-ziet/common-lib";
 import { Conversation } from "../../models/conversation";
+import { queueGroupName } from "./queue-group-name";
 import { io } from "../../app";
 
 export class OrderCompletedListener extends Listener<OrderCompletedEvent> {
@@ -9,21 +9,25 @@ export class OrderCompletedListener extends Listener<OrderCompletedEvent> {
     queueGroupName = queueGroupName;
 
     async onMessage(data: OrderCompletedEvent['data'], msg: Message) {
-        const conversation = await Conversation.findOne({ orderId: data.id });
+        try {
+            const conversation = await Conversation.findOne({ orderId: data.id });
 
-        if (!conversation) {
-            return msg.ack();
+            if (!conversation) {
+                return msg.ack();
+            }
+
+            conversation.set({ isActive: false });
+            await conversation.save();
+
+            // Notify users via Socket.io to lock message textareas
+            io.to(conversation.customerId).to(conversation.vendorId).emit('conversationArchived', {
+                conversationId: conversation.id,
+                reason: 'Order Completed'
+            });
+
+            msg.ack();
+        } catch (err) {
+            console.error("Error processing OrderCompletedEvent in Chat service:", err);
         }
-
-        conversation.set({ isActive: false });
-        await conversation.save();
-
-        // Notify users via Socket.io to disable the "Send" button in the UI
-        io.to(conversation.customerId).to(conversation.vendorId).emit('conversationArchived', {
-            conversationId: conversation.id,
-            reason: 'Order Completed'
-        });
-
-        msg.ack();
     }
 }
