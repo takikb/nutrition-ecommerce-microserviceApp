@@ -4,10 +4,9 @@ import { Message } from '../models/message';
 
 const router = express.Router();
 
-router.get('/api/conversations/unread-count', requireAuth, async (req: Request, res: Response) => {
+router.get('/api/chat/conversations/unread-count', requireAuth, async (req: Request, res: Response) => {
     const userId = req.currentUser!.id;
 
-    // Count every single unread message directed to this user across all their chats
     const count = await Message.countDocuments({
         recipientId: userId,
         isRead: false

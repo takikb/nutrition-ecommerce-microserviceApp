@@ -4,6 +4,16 @@ import { natsWrapper } from "./nats-wrapper";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
 
+import { OrderCreatedListener } from './events/listeners/order-created-listener';
+import { OrderCancelledListener } from './events/listeners/order-cancelled-listener';
+import { OrderCompletedListener } from './events/listeners/order-completed-listener';
+import { ProductDeletedListener } from './events/listeners/product-deleted-listener';
+import { ProductUpdateListener } from './events/listeners/product-update-listener';
+
+import { ProductCreatedListener } from './events/listeners/product-created-listener';
+import { UserCreatedListener } from './events/listeners/user-created-listener';
+import { UserUpdatedListener } from './events/listeners/user-updated-listener';
+
 const start = async () => {
     if (!process.env.JWT_KEY) {
         throw new Error('JWT_KEY must be defined')
@@ -54,6 +64,16 @@ const start = async () => {
         })
         process.on('SIGINT', () => natsWrapper.client.close())
         process.on('SIGTERM', () => natsWrapper.client.close())
+
+        new OrderCreatedListener(natsWrapper.client).listen();
+        new OrderCancelledListener(natsWrapper.client).listen();
+        new OrderCompletedListener(natsWrapper.client).listen();
+        new ProductUpdateListener(natsWrapper.client).listen();
+        new ProductDeletedListener(natsWrapper.client).listen();
+
+        new ProductCreatedListener(natsWrapper.client).listen();
+        new UserCreatedListener(natsWrapper.client).listen();
+        new UserUpdatedListener(natsWrapper.client).listen();
         
         await mongoose.connect(process.env.MONGO_URI)
         console.log('Connected to MongoDB')

@@ -1,14 +1,13 @@
 import express, { Request, Response } from 'express'
-import { NotAuthorizedError, NotFoundError, requireAuth } from '@d-ziet/common-lib'
+import { NotAuthorizedError, NotFoundError, requireAuth, validateRequest } from '@d-ziet/common-lib'
 import { Message } from '../models/message'
 import { Conversation } from '../models/conversation'
 import { body } from 'express-validator'
-import { validateRequest } from '@d-ziet/common-lib'
 import { io } from '../app'
 
 const router = express.Router()
 
-router.post('/api/messages', requireAuth, [
+router.post('/api/chat/messages', requireAuth, [
     body('conversationId')
         .not()
         .isEmpty()
@@ -27,13 +26,14 @@ router.post('/api/messages', requireAuth, [
         throw new NotFoundError();
     }
 
-    if (conversation.customerId !== req.currentUser!.id && conversation.vendorId !== req.currentUser!.id) {
+    // Explicit string checks on referenced replica IDs [4]
+    if (conversation.customerId.toString() !== req.currentUser!.id && conversation.vendorId.toString() !== req.currentUser!.id) {
         throw new NotAuthorizedError();
     }
     
-    const recieverId = req.currentUser!.id === conversation.customerId
-        ? conversation.vendorId
-        : conversation.customerId;
+    const recieverId = req.currentUser!.id === conversation.customerId.toString()
+        ? conversation.vendorId.toString()
+        : conversation.customerId.toString();
 
     const message = Message.build({
         conversationId,
@@ -50,10 +50,10 @@ router.post('/api/messages', requireAuth, [
     });
     await conversation.save();
 
-    //emit the message to the recipient's room
+    // Emit the message to the recipient's room
     io.to(recieverId).emit('newMessage', message);
 
     res.status(201).send(message);
-})
+});
 
 export { router as newMessageRouter }

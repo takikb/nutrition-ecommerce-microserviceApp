@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Router from "next/router";
+import axios from "axios"; // Imported Axios for direct API calls [4]
 import useRequest from "../../hooks/use-request";
-import buildClient from "../../api/build-client";
 
 export default function ProductDetailsPage({ product, matchScore, currentUser }) {
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [initiatingChat, setInitiatingChat] = useState(false); // Chat loading state [4]
     
     // Checkout Form States
     const [quantity, setQuantity] = useState(1);
@@ -69,6 +70,37 @@ export default function ProductDetailsPage({ product, matchScore, currentUser })
             deliveryAddress: deliveryAddress.trim(),
             phoneNumber: phoneNumber.trim()
         });
+    };
+
+    // Direct Conversation Initiation Handler [4]
+    const handleContactVendor = async () => {
+        if (!currentUser) {
+            Router.push("/auth/signin");
+            return;
+        }
+
+        setInitiatingChat(true);
+        const exactProductId = product.id || product._id;
+
+        try {
+            // Call the backend conversation route directly [4]
+            const { data: conversation } = await axios.post("/api/chat/conversations", {
+                productId: exactProductId,
+                vendorId: product.vendorId,
+                productTitle: product.title,
+                productPrice: rawPrice
+            });
+
+            // Navigate directly to the Chat window passing the ID to active select instantly [4]
+            Router.push({
+                pathname: "/chat",
+                query: { activeId: conversation.id }
+            });
+        } catch (err) {
+            console.error("Failed to initiate chat channel:", err.message);
+        } finally {
+            setInitiatingChat(false);
+        }
     };
 
     if (!product) {
@@ -411,13 +443,17 @@ export default function ProductDetailsPage({ product, matchScore, currentUser })
                                     Sign Up to Order
                                 </Link>
                             )}
-                            <Link 
-                                href="/chat"
-                                className="px-6 border border-lime-600 text-lime-600 hover:bg-lime-50 font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm focus:outline-none"
+                            
+                            {/* FIXED: Action button directly triggers direct handshake helper [4] */}
+                            <button 
+                                type="button"
+                                disabled={initiatingChat}
+                                onClick={handleContactVendor}
+                                className="px-6 border border-lime-600 text-lime-600 hover:bg-lime-50 font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm focus:outline-none cursor-pointer disabled:opacity-50"
                             >
                                 <span className="material-symbols-outlined text-[18px]">message_circle</span>
-                                Contact Vendor
-                            </Link>
+                                {initiatingChat ? "Connecting..." : "Contact Vendor"}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -426,12 +462,16 @@ export default function ProductDetailsPage({ product, matchScore, currentUser })
             {/* Mobile Sticky Action Bar */}
             <div className="md:hidden fixed bottom-16 left-0 w-full bg-white border-t border-zinc-100 p-4 z-40 shadow-sm flex flex-col gap-3">
                 <div className="flex gap-3">
-                    <Link 
-                        href="/chat"
-                        className="px-4 border border-lime-600 text-lime-600 hover:bg-lime-50 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 focus:outline-none"
+                    
+                    {/* FIXED: Action button triggers direct handshake helper [4] */}
+                    <button 
+                        type="button"
+                        disabled={initiatingChat}
+                        onClick={handleContactVendor}
+                        className="px-4 border border-lime-600 text-lime-600 hover:bg-lime-50 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 focus:outline-none disabled:opacity-50 cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[20px]">message_circle</span>
-                    </Link>
+                    </button>
                     
                     {currentUser && currentUser.role === 'customer' ? (
                         <button 

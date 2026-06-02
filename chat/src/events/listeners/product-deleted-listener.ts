@@ -1,7 +1,8 @@
-import { Listener, ProductDeletedEvent, Subjects } from "@d-ziet/common-lib";
 import { Message } from "node-nats-streaming";
-import { queueGroupName } from "./queue-group-name";
+import { Listener, Subjects, ProductDeletedEvent } from "@d-ziet/common-lib";
 import { Conversation } from "../../models/conversation";
+import { Product } from "../../models/product";
+import { queueGroupName } from "./queue-group-name";
 import { io } from "../../app";
 
 export class ProductDeletedListener extends Listener<ProductDeletedEvent> {
@@ -11,31 +12,38 @@ export class ProductDeletedListener extends Listener<ProductDeletedEvent> {
     async onMessage(data: ProductDeletedEvent['data'], msg: Message) {
         const { id } = data;
 
-        const conversations = await Conversation.find({ productId: id });
+        try {
+            const conversations = await Conversation.find({ productId: id });
 
-        if (conversations.length === 0) {
-            return msg.ack();
-        }
-  
-        await Conversation.updateMany(
-            { productId: id },
-            { 
-                $set: { 
-                    isActive: false,
-                    lastMessage: 'This product has been deleted by the vendor.' 
-                } 
+            if (conversations.length > 0) {
+                // Archive all conversations associated with the deleted product
+                await Conversation.updateMany(
+                    { productId: id },
+                    { 
+                        $set: { 
+                            isActive: false,
+                            lastMessage: 'This product has been deleted by the vendor.' 
+                        } 
+                    }
+                );
+
+                conversations.forEach((conv) => {
+                    io.to(conv.customerId).to(conv.vendorId).emit('conversationArchived', {
+                        conversationId: conv.id,
+                        reason: 'Product Deleted'
+                    });
+                });
             }
-        );
 
-        conversations.forEach((conv) => {
-            io.to(conv.customerId).to(conv.vendorId).emit('conversationArchived', {
-                conversationId: conv.id,
-                reason: 'Product Deleted'
-            });
-        });
+            // Clean up the local replica product record [4]
+            const product = await Product.findById(id);
+            if (product) {
+                await product.deleteOne();
+            }
 
-        console.log(`Archived ${conversations.length} conversations due to product deletion.`);
-
-        msg.ack();
+            msg.ack();
+        } catch (err) {
+            console.error("Error processing ProductDeletedEvent in Chat service:", err);
+        }
     }
 }

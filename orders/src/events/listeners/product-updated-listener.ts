@@ -11,11 +11,20 @@ export class ProductUpdatedListener extends Listener<ProductUpdatedEvent> {
         const { id, title, priceDZD, vendorId, verificationStatus, images } = data;
         
         try {
+            // Find by version concurrency check
             let product = await Product.findByEvent(data);
             
             if (!product) {
-                // If the product was not found (because it was pending on creation) 
-                // but is now approved, defensively build and save it in the Orders DB [2]
+                // Inspect if the product exists in the DB under ANY other version [2]
+                const existingProduct = await Product.findById(id);
+                
+                if (existingProduct) {
+                    // SCENARIO A: Product exists but version is out-of-order (e.g., received v2 before v1) [2].
+                    // We must NOT call msg.ack() so NATS redelivers once version sequence catches up.
+                    throw new Error(`Out-of-order event. DB version is ${existingProduct.version}, event version is ${data.version}`);
+                }
+
+                // SCENARIO B: Product truly does not exist yet.
                 if (verificationStatus === 'approved') {
                     product = Product.build({
                         id,
@@ -28,18 +37,19 @@ export class ProductUpdatedListener extends Listener<ProductUpdatedEvent> {
                     return msg.ack();
                 }
 
-                // If it is still not approved and doesn't exist, acknowledge and skip [2]
+                // If it doesn't exist and isn't approved, acknowledge and skip [2]
                 return msg.ack();
             }
 
-            // Normal update flow if the product already exists [2]
+            // Normal sequential update flow [2]
             product.set({ title, priceDZD, images });
             await product.save();
 
             msg.ack();
         } catch (err) {
-            // Defensive wrapper prevents unhandled rejections from killing the process [2]
-            console.error("Error processing ProductUpdatedEvent:", err);
+            const message = err instanceof Error ? err.message : String(err);
+            console.error("Error processing ProductUpdatedEvent:", message);
+            // If it's a version mismatch or database drop, we let NATS retry by NOT calling msg.ack() [2].
         }
     }
 }

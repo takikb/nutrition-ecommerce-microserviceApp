@@ -5,8 +5,7 @@ import { Conversation } from '../models/conversation';
 
 const router = express.Router();
 
-// Used PATCH because we are partially updating resources
-router.patch('/api/conversations/:conversationId/read', requireAuth, async (req: Request, res: Response) => {
+router.patch('/api/chat/conversations/:conversationId/read', requireAuth, async (req: Request, res: Response) => {
     const { conversationId } = req.params;
     const userId = req.currentUser!.id;
 
@@ -15,11 +14,10 @@ router.patch('/api/conversations/:conversationId/read', requireAuth, async (req:
         throw new NotFoundError();
     }
 
-    if (conversation.customerId !== userId && conversation.vendorId !== userId) {
+    if (conversation.customerId.toString() !== userId && conversation.vendorId.toString() !== userId) {
         throw new NotAuthorizedError();
     }
 
-    // Update all unread messages where the CURRENT USER is the recipient
     await Message.updateMany(
         { 
             conversationId, 

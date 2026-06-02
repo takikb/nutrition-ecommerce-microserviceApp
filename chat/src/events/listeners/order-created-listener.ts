@@ -1,7 +1,9 @@
-import { Listener, OrderCreatedEvent, Subjects } from "@d-ziet/common-lib";
-import { queueGroupName } from "./queue-group-name";
 import { Message } from "node-nats-streaming";
+import { Listener, Subjects, OrderCreatedEvent } from "@d-ziet/common-lib";
 import { Conversation } from "../../models/conversation";
+import { Product } from "../../models/product"; 
+import { User } from "../../models/user";       
+import { queueGroupName } from "./queue-group-name";
 import { io } from "../../app";
 
 export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
@@ -9,42 +11,65 @@ export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
     queueGroupName = queueGroupName;
 
     async onMessage(data: OrderCreatedEvent['data'], msg: Message) {        
-        
-        let conversation = await Conversation.findOne({ 
-            productId: data.product.id,
-            customerId: data.userId,
-         });
+        const { id: orderId, userId, product: eventProduct } = data;
 
-        if (!conversation) {
-             const newConversation = Conversation.build({
-                productId: data.product.id,
-                customerId: data.userId,
-                vendorId: data.product.vendorId,
-                productTitle: data.product.title,
-                productPrice: data.product.priceDZD,
-                orderId: data.id
-            })
-            await newConversation.save();
+        try {
+            // Explicitly cast to 'any' to bypass strict Mongoose compiler mismatches [4]
+            let product: any = await Product.findById(eventProduct.id);
+            if (!product) {
+                product = Product.build({
+                    id: eventProduct.id,
+                    title: eventProduct.title,
+                    priceDZD: eventProduct.priceDZD,
+                    vendorId: eventProduct.vendorId
+                });
+                await product.save();
+            }
 
-            // Notify vendor via socket that a new order request is in the chat
-            io.to(data.product.vendorId).emit('orderCreatedInChat', {
-                conversationId: newConversation._id.toString(),
-                orderId: data.id
+            let customer: any = await User.findById(userId);
+            if (!customer) {
+                customer = User.build({
+                    id: userId,
+                    fullName: "Active Member", 
+                    role: "customer"
+                });
+                await customer.save();
+            }
+
+            let conversation = await Conversation.findOne({ 
+                productId: eventProduct.id,
+                customerId: userId,
             });
 
-        } else {
-            conversation.set({ 
-                orderId: data.id,
-                isActive: true
-            });
-            await conversation.save();
+            if (!conversation) {
+                const newConversation = Conversation.build({
+                    productId: eventProduct.id,
+                    customerId: userId,
+                    vendorId: eventProduct.vendorId,
+                    orderId: orderId
+                });
+                await newConversation.save();
 
-            // Notify vendor via socket that a new order request is in the chat
-            io.to(data.product.vendorId).emit('orderCreatedInChat', {
-                conversationId: conversation._id.toString(),
-                orderId: data.id
-            });
+                io.to(eventProduct.vendorId).emit('orderCreatedInChat', {
+                    conversationId: newConversation._id,
+                    orderId: orderId
+                });
+            } else {
+                conversation.set({ 
+                    orderId: orderId,
+                    isActive: true
+                });
+                await conversation.save();
+
+                io.to(eventProduct.vendorId).emit('orderCreatedInChat', {
+                    conversationId: conversation.id,
+                    orderId: orderId
+                });
+            }
+
+            msg.ack();
+        } catch (err) {
+            console.error("Error processing OrderCreatedEvent in Chat service:", err);
         }
-        msg.ack();
     }
 }
