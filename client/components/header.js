@@ -74,7 +74,7 @@ export default function Header({ currentUser }) {
 
                 {/* 
                   2. CUSTOMER WORKSPACE NAVIGATION TABS:
-                  Enables customers to easily access Marketplace, Orders list, and Messages.
+                  Enables customers to easily access Marketplace, Orders, Messages, and Profile.
                 */}
                 {currentUser && currentUser.role === "customer" && (
                     <nav className="hidden md:flex gap-8 ml-8">
@@ -90,12 +90,18 @@ export default function Header({ currentUser }) {
                         >
                             Orders
                         </Link>
-                        {/* Customer direct chat workspace tab */}
                         <Link 
                             href="/chat" 
                             className={router.pathname === "/chat" ? activeTabClass : inactiveTabClass}
                         >
                             Messages
+                        </Link>
+                        {/* FIXED: Dynamic customer profile tab added [4] */}
+                        <Link 
+                            href="/profile" 
+                            className={router.pathname === "/profile" ? activeTabClass : inactiveTabClass}
+                        >
+                            Profile
                         </Link>
                     </nav>
                 )}
@@ -134,7 +140,7 @@ export default function Header({ currentUser }) {
                         >
                             <span className="material-symbols-outlined block text-[22px]">chat</span>
                             {unreadMessages > 0 && (
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
                             )}
                         </Link>
 
@@ -166,11 +172,18 @@ export default function Header({ currentUser }) {
                             </Link>
                         )}
 
-                        {/* User Profile Pill Button */}
-                        <div className="flex items-center gap-2 bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-full font-label-md text-label-md text-zinc-800">
+                        {/* FIXED: User Profile Pill Button converted from static div to interactive Next.js Link [4] */}
+                        <Link 
+                            href="/profile" 
+                            className={`flex items-center gap-2 bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-full font-label-md text-label-md transition-all active:scale-95 focus:outline-none cursor-pointer ${
+                                router.pathname === "/profile"
+                                    ? "text-primary border-primary font-bold"
+                                    : "text-zinc-800 hover:text-primary"
+                            }`}
+                        >
                             <span className="material-symbols-outlined text-zinc-500 text-[18px] select-none">account_circle</span>
                             <span>{currentUser.fullName || currentUser.email || "Active Member"}</span>
-                        </div>
+                        </Link>
 
                         {/* Sign Out Button */}
                         <Link 

@@ -6,7 +6,9 @@ import { currentUserRouter } from './routes/current-user'
 import { signinRouter } from './routes/signin'
 import { signoutRouter } from './routes/signout'
 import { signupRouter } from './routes/signup'
-import { errorHandler, NotFoundError } from '@d-ziet/common-lib'
+import { updateUserRouter } from './routes/update'
+import { showProfileRouter } from './routes/profile'
+import { errorHandler, NotFoundError, currentUser } from '@d-ziet/common-lib'
 
 
 const app = express()
@@ -17,10 +19,14 @@ app.use(cookieSession({
     secure: process.env.NODE_ENV !== 'test' // only use secure cookies in production and development
 }))
 
+app.use(currentUser)
+
 app.use(currentUserRouter)
 app.use(signinRouter)
 app.use(signoutRouter)
 app.use(signupRouter)
+app.use(updateUserRouter)
+app.use(showProfileRouter)
 
 app.all(/(.*)/, async() => {
     throw new NotFoundError();
