@@ -40,7 +40,10 @@ spec:
             - name: SMTP_USER
               value: "kebbabtaki@gmail.com"
             - name: SMTP_PASS
-              value: "mzgg ospw qhdu jczw"
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-secret
+                  key: SMTP_PASS
 ---
 
 apiVersion: v1
