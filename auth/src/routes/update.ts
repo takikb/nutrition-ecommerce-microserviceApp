@@ -226,6 +226,8 @@ router.put(
         id: user.id,
         email: user.email,
         role: user.role,
+        fullName: user.fullName,
+        isActive: user.isActive
       },
       process.env.JWT_KEY!
     );
@@ -241,6 +243,7 @@ router.put(
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        isActive: user.isActive
       },
       profile: healthProfile || vendorProfile
     });

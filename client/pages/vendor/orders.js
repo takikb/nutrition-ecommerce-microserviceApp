@@ -11,6 +11,25 @@ export default function VendorOrders({ initialOrders, currentUser }) {
     const [actionLoading, setActionLoading] = useState(false);
     const [localError, setLocalError] = useState(null);
 
+    // 1. Sort orders chronologically to establish static sequential IDs (Order #1, Order #2...) [4]
+    const sortedChronological = [...orders].sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    );
+
+    const getOrderSequentialId = (order) => {
+        if (!order) return 1;
+        const idx = sortedChronological.findIndex(o => (o.id || o._id) === (order.id || order._id));
+        return idx !== -1 ? idx + 1 : 1;
+    };
+
+    // Helper: Safely resolve customer name with defensive hash fallback for older records [4]
+    const getCustomerDisplayName = (order) => {
+        if (!order) return "Active Member";
+        if (order.customerName) return order.customerName;
+        // Fallback prefix from raw userId string
+        return `Customer #${order.userId.substring(0, 5).toUpperCase()}`;
+    };
+
     const handleSelectOrder = (order) => {
         setActiveOrder(order);
         setLocalError(null);
@@ -20,11 +39,11 @@ export default function VendorOrders({ initialOrders, currentUser }) {
         const query = searchQuery.toLowerCase().trim();
         if (!query) return true;
         
-        const orderId = (o.id || o._id || "").toLowerCase();
+        const customerName = getCustomerDisplayName(o).toLowerCase();
         const address = (o.deliveryAddress || "").toLowerCase();
         const phone = (o.phoneNumber || "").toLowerCase();
         
-        return orderId.includes(query) || address.includes(query) || phone.includes(query);
+        return customerName.includes(query) || address.includes(query) || phone.includes(query);
     });
 
     const formatDate = (dateStr) => {
@@ -38,9 +57,11 @@ export default function VendorOrders({ initialOrders, currentUser }) {
         });
     };
 
+    // Generates correct name initials based on the resolved customer name [4]
     const getInitials = (order) => {
-        if (!order || !order.userId) return "CU";
-        return order.userId.substring(0, 2).toUpperCase();
+        if (!order) return "CU";
+        const name = getCustomerDisplayName(order);
+        return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
     };
 
     const handleCompleteOrder = async () => {
@@ -70,8 +91,6 @@ export default function VendorOrders({ initialOrders, currentUser }) {
 
     return (
         <div className="bg-orange-50/50 text-zinc-800 min-h-[calc(100vh-73px)] flex flex-col font-sans selection:bg-lime-200">
-            {/* NOTE: No local header is imported or rendered here anymore. */}
-
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
@@ -95,7 +114,7 @@ export default function VendorOrders({ initialOrders, currentUser }) {
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
                             <input 
                                 className="w-full pl-10 pr-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition-colors" 
-                                placeholder="Search by ID, Address, or Phone..." 
+                                placeholder="Search by name, address, or phone..." 
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -127,7 +146,8 @@ export default function VendorOrders({ initialOrders, currentUser }) {
                                         }`}
                                     >
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className="font-semibold text-xs text-zinc-400">#{orderId.substring(0, 8).toUpperCase()}</span>
+                                            {/* Renders chronological sequential ID (e.g. Order #1) instead of raw hash [4] */}
+                                            <span className="font-bold text-xs text-lime-600">Order #{getOrderSequentialId(order)}</span>
                                             
                                             {isCompleted && (
                                                 <span className="bg-lime-50 text-lime-700 border border-lime-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -146,7 +166,10 @@ export default function VendorOrders({ initialOrders, currentUser }) {
                                             )}
                                         </div>
 
-                                        <h3 className="font-bold text-zinc-800 text-lg mb-1 truncate">User: {order.userId.substring(0, 10)}</h3>
+                                        {/* Renders customer's real display name [4] */}
+                                        <h3 className="font-bold text-zinc-800 text-lg mb-1 truncate">
+                                            {getCustomerDisplayName(order)}
+                                        </h3>
                                         <p className="text-xs text-zinc-500 mb-3 flex items-center gap-1">
                                             <span className="material-symbols-outlined text-sm">inventory_2</span> Quantity: {order.quantity} serving(s)
                                         </p>
@@ -168,7 +191,7 @@ export default function VendorOrders({ initialOrders, currentUser }) {
                             
                             <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center shrink-0">
                                 <div>
-                                    <h2 className="text-xl font-extrabold text-zinc-800 font-headline">Order #{activeOrder.id || activeOrder._id}</h2>
+                                    <h2 className="text-xl font-extrabold text-zinc-800 font-headline">Order #{getOrderSequentialId(activeOrder)}</h2>
                                     <p className="text-xs text-zinc-400 mt-0.5 font-body">Processed dynamically via orders microservice pipeline.</p>
                                 </div>
                             </div>
@@ -181,7 +204,10 @@ export default function VendorOrders({ initialOrders, currentUser }) {
                                             {getInitials(activeOrder)}
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-zinc-800 text-base">User ID: {activeOrder.userId}</h4>
+                                            {/* Renders customer's real display name [4] */}
+                                            <h4 className="font-bold text-zinc-800 text-base">
+                                                {getCustomerDisplayName(activeOrder)}
+                                            </h4>
                                             <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5 font-body">
                                                 <span className="material-symbols-outlined text-sm">location_on</span> {activeOrder.deliveryAddress}
                                             </p>
@@ -278,7 +304,7 @@ export default function VendorOrders({ initialOrders, currentUser }) {
 
                         </div>
                     ) : (
-                        <div className="p-20 text-center text-zinc-400 my-auto">
+                        <div className="p-20 text-center text-zinc-400 my-auto select-none">
                             <span className="material-symbols-outlined text-6xl mb-4">fact_check</span>
                             <p className="text-sm font-semibold font-headline">Select an order from the list to review details.</p>
                         </div>

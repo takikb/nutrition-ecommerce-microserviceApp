@@ -36,7 +36,8 @@ router.post('/api/users/signin',
     const userJWT = jwt.sign({
         id: existingUser._id,
         email: existingUser.email,
-        role: existingUser.role
+        role: existingUser.role,
+        fullName: existingUser.fullName
     }, process.env.JWT_KEY!)
 
     req.session = {

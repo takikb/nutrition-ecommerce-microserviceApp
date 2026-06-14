@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express'
-import { NotAuthorizedError, NotFoundError, requireAuth, validateRequest } from '@d-ziet/common-lib'
+import { NotAuthorizedError, NotFoundError, requireAuth, validateRequest, requireRole } from '@d-ziet/common-lib'
 import { Message } from '../models/message'
 import { Conversation } from '../models/conversation'
 import { body } from 'express-validator'
@@ -7,7 +7,7 @@ import { io } from '../app'
 
 const router = express.Router()
 
-router.post('/api/chat/messages', requireAuth, [
+router.post('/api/chat/messages', requireAuth, requireRole(['vendor', 'customer']), [
     body('conversationId')
         .not()
         .isEmpty()

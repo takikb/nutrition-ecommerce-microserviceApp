@@ -29,9 +29,9 @@ interface conversationModel extends mongoose.Model<conversationDoc> {
 }
 
 const conversationSchema = new mongoose.Schema({
-    productId: { type: String, required: true },
-    customerId: { type: String, required: true, index: true },
-    vendorId: { type: String, required: true, index: true },
+    productId: { type: String, ref: 'Product', required: true, index: true },
+    customerId: { type: String, ref: 'User', required: true, index: true },
+    vendorId: { type: String, ref: 'User', required: true, index: true },
     
     //orderId is optional, it will be null untill the user order.
     orderId: { type: String, index: true },

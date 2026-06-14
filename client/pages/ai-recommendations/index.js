@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Router from "next/router";
 import buildClient from "../../api/build-client";
 
-export default function Home({ recommendations, productsCatalog, currentUser }) {
-    const [cartCount, setCartCount] = useState(0);
-    const [addingProductId, setAddingProductId] = useState(null);
-    const [toastMessage, setToastMessage] = useState("");
-    
+export default function AIRecommendationsPage({ recommendations, productsCatalog, currentUser }) {
     // Animation tracking for macro targets
     const [animatedWidths, setAnimatedWidths] = useState({ protein: '0%', carbs: '0%', fats: '0%' });
 
@@ -32,15 +29,6 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
             return () => clearTimeout(timer);
         }
     }, [currentUser, recommendations]);
-
-    const handleAddToCart = (productTitle, productId) => {
-        setAddingProductId(productId);
-        setCartCount(prev => prev + 1);
-        setToastMessage(`Added "${productTitle}" to your cart!`);
-        
-        setTimeout(() => setAddingProductId(null), 800);
-        setTimeout(() => setToastMessage(""), 3000);
-    };
 
     // If no authenticated user is logged in, show a call-to-action landing page
     if (!currentUser) {
@@ -92,15 +80,6 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
 
     return (
         <div className="bg-orange-50/50 text-zinc-900 min-h-screen pb-24 md:pb-12 font-sans selection:bg-lime-200">
-
-            {/* Optional Toast Notification banner */}
-            {toastMessage && (
-                <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-6 py-3.5 rounded-2xl shadow-lg flex items-center gap-3 animate-enter text-sm font-medium">
-                    <span className="material-symbols-outlined text-lime-400">check_circle</span>
-                    {toastMessage}
-                </div>
-            )}
-
             <main className="pt-10 px-4 md:px-8 max-w-7xl mx-auto space-y-12 animate-enter">
                 
                 {/* SECTION 1: DAILY MACRO TARGETS */}
@@ -198,7 +177,7 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-enter">
                             {recommendedProducts.map((p) => (
-                                <div key={p.id} className="bg-white rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 border border-zinc-100 relative group">
+                                <div key={p.id} className="bg-white rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 border border-zinc-100 relative group flex flex-col h-full">
                                     
                                     {/* AI Match Badge float */}
                                     <div className="absolute top-4 right-4 z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-zinc-100 flex items-center space-x-1">
@@ -206,26 +185,27 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
                                         <span className="font-label text-xs font-bold text-lime-700">{p.match_score}% Match</span>
                                     </div>
 
-                                    {/* Product image - Now directly rendering real, dynamic Cloudinary arrays */}
+                                    {/* Product image - FIXED: Dynamic Next.js route mapping [4] */}
                                     <div className="h-48 w-full bg-zinc-100 relative overflow-hidden">
-                                        <Link href={`/products/${p.id}`} className="block w-full h-full focus:outline-none">
+                                        <Link href="/products/[productId]" as={`/products/${p.id}`} className="block w-full h-full focus:outline-none">
                                             <img 
                                                 alt={p.title} 
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer" 
                                                 src={p.images?.[0] || "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600"}
                                             />
                                         </Link>
                                     </div>
 
                                     {/* Card body details */}
-                                    <div className="p-6">
-                                        <Link href={`/products/${p.id}`} className="hover:underline focus:outline-none">
-                                            <h3 className="font-headline text-[20px] font-bold text-zinc-900 mb-1 truncate">{p.title}</h3>
+                                    <div className="p-6 flex flex-col flex-1">
+                                        {/* FIXED: Dynamic Next.js route mapping [4] */}
+                                        <Link href="/products/[productId]" as={`/products/${p.id}`} className="hover:underline focus:outline-none cursor-pointer">
+                                            <h3 className="font-headline text-[20px] font-bold text-zinc-900 mb-1 truncate hover:text-lime-700 transition-colors">{p.title}</h3>
                                         </Link>
                                         <div className="font-label text-sm font-semibold text-lime-700 mb-4">{p.price_dzd || p.priceDZD} DZD</div>
                                         
                                         {/* Macro Breakdown Grid */}
-                                        <div className="flex space-x-4 mb-6 text-center border-t border-b border-zinc-50 py-3">
+                                        <div className="flex space-x-4 mb-6 text-center border-t border-b border-zinc-50 py-3 mt-auto">
                                             <div className="flex-1">
                                                 <span className="font-label text-[10px] text-zinc-400 uppercase tracking-wider block">Cals</span>
                                                 <span className="font-label text-sm font-bold text-zinc-800">{p.calories}</span>
@@ -244,14 +224,12 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
                                             </div>
                                         </div>
 
-                                        <button 
-                                            onClick={() => handleAddToCart(p.title, p.id)}
-                                            disabled={addingProductId === p.id}
-                                            className="w-full bg-lime-100 hover:bg-lime-200 text-lime-800 font-label text-sm font-semibold py-3 rounded-xl transition-colors focus:outline-none flex items-center justify-center gap-2"
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
-                                            {addingProductId === p.id ? "Adding..." : "Add to Cart"}
-                                        </button>
+                                        {/* FIXED: Replaced legacy "Add to Cart" button with dynamic "View Details" Link [4] */}
+                                        <Link href="/products/[productId]" as={`/products/${p.id}`} className="w-full">
+                                            <button className="w-full bg-lime-100 hover:bg-lime-600 hover:text-white text-lime-800 font-label text-sm font-semibold py-3 rounded-xl transition-colors focus:outline-none text-center block cursor-pointer">
+                                                View Details
+                                            </button>
+                                        </Link>
                                     </div>
                                 </div>
                             ))}
@@ -294,7 +272,7 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
                                     <div className="p-6 relative z-20">
                                         <h3 className="font-headline text-[20px] font-bold text-zinc-900 mb-1">{item.title}</h3>
                                         <div className="font-label text-sm font-semibold text-zinc-500 mb-4">{item.priceDZD} DZD</div>
-                                        <button className="w-full bg-zinc-100 text-zinc-400 font-label text-sm font-semibold py-3 rounded-xl cursor-not-allowed" disabled>
+                                        <button className="w-full bg-zinc-100 text-zinc-500 font-label text-sm font-semibold py-3 rounded-xl cursor-not-allowed" disabled>
                                             Add to Cart
                                         </button>
                                     </div>
@@ -328,7 +306,7 @@ export default function Home({ recommendations, productsCatalog, currentUser }) 
 }
 
 // Next.js SSR multi-service aggregation [2]
-Home.getInitialProps = async (context, client, currentUser) => {
+AIRecommendationsPage.getInitialProps = async (context, client, currentUser) => {
     if (!currentUser) {
         return { recommendations: null, productsCatalog: [], currentUser: null };
     }

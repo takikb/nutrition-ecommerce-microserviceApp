@@ -11,6 +11,7 @@ interface OrderAttrs {
     deliveryAddress: string;
     phoneNumber: string;
     totalPriceDZD: number;
+    customerName: string;
 }
 
 interface OrderDoc extends mongoose.Document {
@@ -23,6 +24,7 @@ interface OrderDoc extends mongoose.Document {
     phoneNumber: string;
     totalPriceDZD: number;
     version: number;
+    customerName: string;
 }
 
 interface OrderModel extends mongoose.Model<OrderDoc> {
@@ -67,6 +69,10 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 0
+    },
+    customerName: {
+        type: String,
+        required: true
     }
 }, {
     timestamps: true,

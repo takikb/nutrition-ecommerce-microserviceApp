@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Message } from "node-nats-streaming";
 import { Listener, Subjects, UserUpdatedEvent } from "@d-ziet/common-lib";
 import { User } from "../../models/user";
@@ -8,40 +9,33 @@ export class UserUpdatedListener extends Listener<UserUpdatedEvent> {
     queueGroupName = queueGroupName;
 
     async onMessage(data: UserUpdatedEvent['data'], msg: Message) {
-        const { id, fullName, role } = data;
+        const { id, fullName, role, version } = data;
 
         try {
-            // 1.Check if the replica already exists
             const existingUser = await User.findById(id);
-            if (existingUser && data.version <= existingUser.version) {
-                // If the event is a duplicate or has the same version, update and ack to break the loop
-                existingUser.set({ fullName, role });
-                await existingUser.save();
-                return msg.ack();
-            }
 
-            // 2. Find sequential version record to prevent out-of-order overrides
-            const user = await User.findByEvent(data);
+            if (existingUser) {
+                // If event is newer, update and align version 
+                if (version > existingUser.version) {
+                    const objectId = new mongoose.Types.ObjectId(id); // Cast to raw ObjectId 
 
-            if (!user) {
-                if (existingUser) {
-                    // Out-of-order sequence check (e.g., received v2 when database is on v0) 
-                    // We throw an error and DO NOT call msg.ack() so NATS retries later 
-                    throw new Error(`Out of order user update. DB version: ${existingUser.version}, Event version: ${data.version}`);
+                    // Executing raw MongoDB driver write to completely bypass Mongoose OCC 
+                    await User.collection.updateOne(
+                        { _id: objectId },
+                        { $set: { fullName, role, version } }
+                    );
                 }
-
-                // Fallback build if user doesn't exist locally yet
-                const newUser = User.build({ id, fullName, role });
-                await newUser.save();
                 return msg.ack();
             }
 
-            user.set({ fullName, role });
-            await user.save();
+            // Fallback build if user doesn't exist locally yet 
+            const newUser = User.build({ id, fullName, role });
+            newUser.set({ version });
+            await newUser.save();
 
             msg.ack();
-        } catch (err) {
-            console.error("Error replicating UserUpdatedEvent in Chat service:", err);
+        } catch (err: any) {
+            console.error("User Sync Error:", err.message);
         }
     }
 }

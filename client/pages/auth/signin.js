@@ -103,8 +103,6 @@ export default function Signin() {
 
                 {/* Form */}
                 <form className="space-y-5" onSubmit={onSubmitFinal}>
-                    
-                    {/* 🚀 ROLE TABS REMOVED FROM HERE FOR MAXIMUM UX & SECURITY */}
 
                     {/* Email Input */}
                     <div className="space-y-1.5">
@@ -172,10 +170,15 @@ export default function Signin() {
                                 <span className="material-symbols-outlined text-sm">error</span> Password must be between 6 and 20 characters.
                             </p>
                         )}
+                        
+                        {/* FIXED: Dynamic recovery Link wrapper replacing the legacy placeholder [4] */}
                         <div className="flex justify-end pt-1">
-                            <a className="text-[14px] font-semibold text-lime-600 hover:text-lime-700 transition-colors font-label" href="#">
+                            <Link 
+                                href="/auth/forgot-password" 
+                                className="text-[14px] font-semibold text-lime-600 hover:text-lime-700 transition-colors font-label cursor-pointer focus:outline-none"
+                            >
                                 Forgot password?
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
