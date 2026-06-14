@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import express, { Request, Response } from 'express'
 import { Product } from '../models/product'
 import { NotFoundError } from '@d-ziet/common-lib'
@@ -5,7 +6,12 @@ import { NotFoundError } from '@d-ziet/common-lib'
 const router = express.Router()
 
 router.get('/api/products/:id', async (req: Request, res: Response) => {
-    const product = await Product.findById(req.params.id);
+    const { id } = req.params;
+    
+    if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+        throw new NotFoundError(); // Stop query immediately and return 404 [4]
+    }
+    const product = await Product.findById(id);
 
     if (!product) {
         throw new NotFoundError();

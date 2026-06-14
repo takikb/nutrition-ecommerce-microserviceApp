@@ -8,6 +8,8 @@ import { signoutRouter } from './routes/signout'
 import { signupRouter } from './routes/signup'
 import { updateUserRouter } from './routes/update'
 import { showProfileRouter } from './routes/profile'
+import { forgotPasswordRouter } from './routes/forgot-password'
+import { resetPasswordRouter } from './routes/reset-password'
 import { errorHandler, NotFoundError, currentUser } from '@d-ziet/common-lib'
 
 
@@ -27,7 +29,9 @@ app.use(signoutRouter)
 app.use(signupRouter)
 app.use(updateUserRouter)
 app.use(showProfileRouter)
-
+app.use(forgotPasswordRouter)
+app.use(resetPasswordRouter)
+ 
 app.all(/(.*)/, async() => {
     throw new NotFoundError();
 })

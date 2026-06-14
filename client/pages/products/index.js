@@ -2,23 +2,16 @@ import { useState } from "react";
 import Link from "next/link";
 
 const ProductsCatalogPage = ({ recommendations, productsCatalog, currentUser }) => {
-    const [cartCount, setCartCount] = useState(0);
-    const [addingProductId, setAddingProductId] = useState(null);
-    const [toastMessage, setToastMessage] = useState("");
-
     // Catalog filters & view modes state (Only Category & Search)
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
-    const [viewMode, setViewMode] = useState(currentUser ? "ai" : "standard"); // Guest default: standard catalog
-
-    const handleAddToCart = (productTitle, productId) => {
-        setAddingProductId(productId);
-        setCartCount(prev => prev + 1);
-        setToastMessage(`Added "${productTitle}" to active plan!`);
-        
-        setTimeout(() => setAddingProductId(null), 800);
-        setTimeout(() => setToastMessage(""), 3000);
-    };
+    
+    // Smart Cold-Start Fallback: If a user has no AI matches yet, default to standard view [1]
+    const [viewMode, setViewMode] = useState(
+        currentUser && recommendations?.recommended_products?.length > 0 
+            ? "ai" 
+            : "standard"
+    );
 
     // Filter processing - exclusive check for Search & Category
     const filterProducts = (arr) => {
@@ -35,22 +28,28 @@ const ProductsCatalogPage = ({ recommendations, productsCatalog, currentUser }) 
         });
     };
 
+    // Cross-Reference & Enrichment Mapping:
+    // Merges raw AI-matches with the authoritative productsCatalog to restore missing category fields [4]
+    const enrichedRecommendations = (recommendations?.recommended_products || []).map(rec => {
+        const matchedProduct = productsCatalog.find(p => (p.id || p._id) === rec.id);
+        if (matchedProduct) {
+            return {
+                ...matchedProduct,
+                match_score: rec.match_score // Preserve the machine-learning match score [4]
+            };
+        }
+        return rec;
+    });
+
     const filteredCatalog = filterProducts(productsCatalog);
-    const filteredRecommendations = filterProducts(recommendations?.recommended_products);
+    // FIXED: Corrected to use enrichedRecommendations so category filtering works in AI Mode [4]
+    const filteredRecommendations = filterProducts(enrichedRecommendations);
 
     // Dynamic grid distribution choice
     const activeProducts = viewMode === "ai" ? filteredRecommendations : filteredCatalog;
 
     return (
         <div className="bg-orange-50/50 text-zinc-900 min-h-screen pb-24 md:pb-16 font-sans">
-            
-            {toastMessage && (
-                <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-6 py-3.5 rounded-2xl shadow-lg flex items-center gap-3 animate-enter text-sm font-medium">
-                    <span className="material-symbols-outlined text-lime-400">check_circle</span>
-                    {toastMessage}
-                </div>
-            )}
-
             <main className="max-w-container-max mx-auto px-4 md:px-gutter py-8 animate-enter">
                 
                 {/* Title Segment & View Layout Toggle */}
@@ -60,7 +59,7 @@ const ProductsCatalogPage = ({ recommendations, productsCatalog, currentUser }) 
                         <p className="font-body-lg text-body-lg text-zinc-500">Discover organic, intelligent meals tailored for you.</p>
                     </div>
 
-                    {currentUser && (
+                    {currentUser && recommendations?.recommended_products?.length > 0 && (
                         <div className="flex items-center bg-zinc-200/50 p-1 rounded-full shadow-inner border border-outline-variant/30">
                             <button 
                                 onClick={() => setViewMode('standard')}
@@ -185,13 +184,12 @@ const ProductsCatalogPage = ({ recommendations, productsCatalog, currentUser }) 
                                             <span className="font-headline-md text-headline-md text-lime-700">
                                                 {displayPrice} DZD
                                             </span>
-                                            <button 
-                                                onClick={() => handleAddToCart(p.title, pid)}
-                                                disabled={addingProductId === pid}
-                                                className="w-full mt-4 bg-lime-100 hover:bg-lime-600 hover:text-white text-lime-700 py-2.5 rounded-xl transition-all font-medium focus:outline-none"
-                                            >
-                                                {addingProductId === pid ? "Adding..." : "Add to Plan"}
-                                            </button>
+                                            {/* FIXED: Replaced legacy "Add to Plan" button with "View Details" link [4] */}
+                                            <Link href="/products/[productId]" as={`/products/${pid}`} className="w-full mt-4">
+                                                <button className="w-full bg-lime-100 hover:bg-lime-600 hover:text-white text-lime-700 py-2.5 rounded-xl transition-all font-semibold focus:outline-none text-center block text-sm">
+                                                    View Details
+                                                </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>

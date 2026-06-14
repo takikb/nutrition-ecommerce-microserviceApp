@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express'
-import { NotFoundError, NotAuthorizedError } from '@d-ziet/common-lib'
+import { NotFoundError, NotAuthorizedError, requireRole, requireAuth } from '@d-ziet/common-lib'
 import { Message } from '../models/message'
 import { Conversation } from '../models/conversation';
 
 const router = express.Router()
 
-router.get('/api/chat/messages/:conversationId', async (req: Request, res: Response) => {
+router.get('/api/chat/messages/:conversationId', requireAuth, requireRole(['vendor', 'customer']), async (req: Request, res: Response) => {
     const conversationId = req.params.conversationId;
 
     const limit = parseInt(req.query.limit as string) || 50; 

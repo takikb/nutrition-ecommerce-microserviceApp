@@ -8,35 +8,49 @@ import { natsWrapper } from '../nats-wrapper';
 const router = express.Router();
 
 router.put('/api/products/:id', requireAuth, requireRole(['vendor']), [
-    body('title')
-        .not()
-        .isEmpty()
-        .withMessage('Title is required'),
+    body('title').not().isEmpty().withMessage('Title is required'),
     body('description')
-        .notEmpty()
-        .isLength({ min: 10, max: 500 })
-        .withMessage('Description is required'),
+      .isLength({ min: 10, max: 500 })
+      .withMessage('Description must be between 10 and 500 characters'),
     body('priceDZD')
-        .not()
-        .isEmpty()
-        .withMessage('Price is required')
-        .isFloat({ gt: 0 })
-        .withMessage('Price must be a positive number'),
-    body('category')
-        .notEmpty()
-        .isIn(Object.values(ProductCategory))
-        .withMessage('Invalid category'),
+      .isFloat({ gt: 0 })
+      .withMessage('Price must be a positive number'),
+    body('category').not().isEmpty().withMessage('Category is required'),
     body('images')
-        .isArray({ min: 1 })
-        .withMessage('At least one image is required'),
-    body('containsAllergens')
-        .isArray()
-        .isIn(Object.values(Allergy))
-        .withMessage('Contains allergens must be an array'),
-], validateRequest, async (req: Request, res: Response) => {
+      .isArray({ min: 1 })
+      .withMessage('At least one product image is required'),
+    body('nutritionTableImage')
+      .not()
+      .isEmpty()
+      .withMessage('Nutrition label image is required'),
+    body('calories')
+      .isFloat({ gt: 0 })
+      .withMessage('Calories must be greater than 0'),
+    body('proteinGrams')
+      .isFloat({ gt: 0 })
+      .withMessage('Protein must be greater than 0'),
+    body('carbsGrams')
+      .isFloat({ gt: 0 })
+      .withMessage('Carbohydrates must be greater than 0'),
+    body('fatGrams')
+      .isFloat({ gt: 0 })
+      .withMessage('Fats must be greater than 0'),
+  ], validateRequest, async (req: Request, res: Response) => {
 
     const product = await Product.findById(req.params.id)
-    const { title, description, priceDZD, images, category, containsAllergens } = req.body;
+    const {
+        title,
+        description,
+        priceDZD,
+        category,
+        images,
+        nutritionTableImage,
+        calories,
+        proteinGrams,
+        carbsGrams,
+        fatGrams,
+        containsAllergens,
+        } = req.body;
 
     if (!product) {
         throw new NotFoundError();
@@ -46,18 +60,19 @@ router.put('/api/products/:id', requireAuth, requireRole(['vendor']), [
         throw new NotAuthorizedError();
     }
 
-    //if the product is rejected
-    if (product.verificationStatus === ProductVerificationStatus.REJECTED) {
-        throw new BadRequestError('Rejected products cannot be updated. Please create a brand new product submission.');
-    }
-
     product.set({
         title,
         description,
         priceDZD,
-        images,
         category,
-        containsAllergens
+        images,
+        nutritionTableImage,
+        calories,
+        proteinGrams,
+        carbsGrams,
+        fatGrams,
+        containsAllergens: containsAllergens || ['none'],
+        verificationStatus: 'pending', // Re-verify on edit [4]
     });
     await product.save();
 

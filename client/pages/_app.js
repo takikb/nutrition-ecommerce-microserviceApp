@@ -1,5 +1,6 @@
 import buildClient from '../api/build-client';
 import Header from '../components/header';
+import Footer from '../components/footer';
 import Head from 'next/head';
 import '../styles/globals.css';
 
@@ -8,6 +9,7 @@ const AppComponent = ({ Component, pageProps, currentUser }) => {
         <div>
             <Header currentUser={currentUser} />
             <Component {...pageProps} />
+            <Footer />
         </div>    
     )    
 };

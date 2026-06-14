@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { Password } from "../services/password"
-
+import crypto from 'crypto'
 
 export enum UserRole {
     ADMIN = 'admin',
@@ -36,6 +36,11 @@ interface UserDoc extends mongoose.Document {
     createdAt: Date
     updatedAt: Date
     version: number
+
+    passwordResetToken?: string
+    passwordResetExpires?: Date
+    // define the custom instance method
+    createPasswordResetToken(): string
 }
 
 const userSchema = new mongoose.Schema({
@@ -67,6 +72,12 @@ const userSchema = new mongoose.Schema({
         updatedAt: {
             type: Date,
             default: Date.now
+        },
+        passwordResetToken: {
+            type: String
+        },
+        passwordResetExpires: {
+            type: Date
         }
 
     }, {
@@ -79,6 +90,8 @@ const userSchema = new mongoose.Schema({
                 delete ret._id
                 delete ret.password
                 delete ret.__v
+                delete ret.passwordResetToken  
+                delete ret.passwordResetExpires
             }
         }
     }
@@ -88,9 +101,30 @@ userSchema.set('versionKey', 'version');
 
 userSchema.pre('save', function() {
     if (!this.isNew) {
-        this.increment();
+        // only increment the version if fullName or email is modified
+        if (this.isModified('fullName') || this.isModified('email')) {
+            this.increment();
+        }
     }
 });
+
+// Custom instance helper method to generate secure tokens
+userSchema.methods.createPasswordResetToken = function() {
+    // 1. Generate a raw, unhashed 32-byte hexadecimal token
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+
+    // 2. Hash the token using SHA-256 to save securely in MongoDB
+    this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(rawResetToken)
+        .digest('hex');
+
+    // 3. Set token expiry limit to exactly 10 minutes from now
+    this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // 4. Return the raw token (this will be sent via email to the user)
+    return rawResetToken;
+};
 
 // any time we try to save a user, this function will run first
 userSchema.pre('save', async function() {

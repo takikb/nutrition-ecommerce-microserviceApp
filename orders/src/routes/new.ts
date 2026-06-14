@@ -48,7 +48,8 @@ async (req: Request, res: Response) => {
         quantity,
         deliveryAddress,
         phoneNumber,
-        totalPriceDZD: product.priceDZD * quantity
+        totalPriceDZD: product.priceDZD * quantity,
+        customerName: req.currentUser!.fullName || 'Active Customer'
     });
     await order.save();
 

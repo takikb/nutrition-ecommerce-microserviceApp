@@ -4,13 +4,12 @@ import Link from "next/link";
 import axios from "axios"; 
 import useRequest from "../../hooks/use-request";
 import buildClient from "../../api/build-client";
-import Header from "../../components/header";
 
 const CLOUDINARY_CLOUD_NAME = "dsjhb76ja"; 
 const CLOUDINARY_UPLOAD_PRESET = "d-ziet_preset"; 
 
 const CATEGORY_OPTIONS = [
-    { value: 'meal-prep', label: 'Meal Prep' },
+    { value: 'meal_prep', label: 'Meal Prep' },
     { value: 'snack', label: 'Snack' },
     { value: 'supplement', label: 'Supplement' },
     { value: 'grocery', label: 'Grocery' },
@@ -33,6 +32,11 @@ export default function VendorProducts({ initialProducts, currentUser }) {
     const [isUploading, setIsUploading] = useState(false); 
     const [touchedFields, setTouchedFields] = useState({});
 
+    // Selected Product tracking for Edit Mode [4]
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [updating, setUpdating] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+
     // Form Field States
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -49,25 +53,13 @@ export default function VendorProducts({ initialProducts, currentUser }) {
     const productImagesInputRef = useRef(null);
     const nutritionImageInputRef = useRef(null);
 
-    const { doRequest, errors } = useRequest({
+    // Create Request Hook
+    const { doRequest, errors: creationErrors } = useRequest({
         url: '/api/products',
         method: 'post',
         onSuccess: (newProduct) => {
             setListings(prev => [newProduct, ...prev]);
-            setTitle('');
-            setDescription('');
-            setPriceDZD('');
-            setCategory('');
-            setImages([]);
-            setNutritionTableImage('');
-            setCalories('');
-            setProteinGrams('');
-            setCarbsGrams('');
-            setFatGrams('');
-            setContainsAllergens([]);
-            setTouchedFields({});
-            if (productImagesInputRef.current) productImagesInputRef.current.value = "";
-            if (nutritionImageInputRef.current) nutritionImageInputRef.current.value = "";
+            handleClearSelection();
         }
     });
 
@@ -130,7 +122,44 @@ export default function VendorProducts({ initialProducts, currentUser }) {
         }
     };
 
-    // Strict numerical boundary assertions (No NaNs, strictly positive ranges)
+    // Card Selection Handlers [4]
+    const handleSelectProduct = (product) => {
+        setSelectedProduct(product);
+        setSubmitError(null);
+        setTitle(product.title);
+        setDescription(product.description);
+        setPriceDZD(product.priceDZD.toString());
+        setCategory(product.category);
+        setImages(product.images || []);
+        setNutritionTableImage(product.nutritionTableImage);
+        setCalories(product.calories.toString());
+        setProteinGrams(product.proteinGrams.toString());
+        setCarbsGrams(product.carbsGrams.toString());
+        setFatGrams(product.fatGrams.toString());
+        setContainsAllergens(product.containsAllergens || []);
+        setTouchedFields({});
+    };
+
+    const handleClearSelection = () => {
+        setSelectedProduct(null);
+        setSubmitError(null);
+        setTitle('');
+        setDescription('');
+        setPriceDZD('');
+        setCategory('');
+        setImages([]);
+        setNutritionTableImage('');
+        setCalories('');
+        setProteinGrams('');
+        setCarbsGrams('');
+        setFatGrams('');
+        setContainsAllergens([]);
+        setTouchedFields({});
+        if (productImagesInputRef.current) productImagesInputRef.current.value = "";
+        if (nutritionImageInputRef.current) nutritionImageInputRef.current.value = "";
+    };
+
+    // Strict numerical boundary assertions
     const parsedPrice = parseFloat(priceDZD);
     const parsedCalories = parseFloat(calories);
     const parsedProtein = parseFloat(proteinGrams);
@@ -153,12 +182,11 @@ export default function VendorProducts({ initialProducts, currentUser }) {
         isImagesValid && isNutritionValid && isCaloriesValid && isProteinValid && 
         isCarbsValid && isFatsValid;
 
-    const onSubmit = async (event) => {
+    // Submit handler supporting both Create and Edit flows [4]
+    const handleFormSubmit = async (event) => {
         event.preventDefault();
         
-        // Final fallback validation before sending network request
         if (!isFormValid || isUploading) {
-            // Touch all fields to reveal validation bugs if submitted prematurely
             setTouchedFields({
                 title: true, description: true, priceDZD: true, category: true,
                 images: true, nutritionTableImage: true, calories: true,
@@ -167,7 +195,7 @@ export default function VendorProducts({ initialProducts, currentUser }) {
             return;
         }
 
-        await doRequest({
+        const payload = {
             title: title.trim(),
             description: description.trim(),
             priceDZD: parsedPrice,
@@ -179,85 +207,197 @@ export default function VendorProducts({ initialProducts, currentUser }) {
             carbsGrams: parsedCarbs,
             fatGrams: parsedFats,
             containsAllergens: containsAllergens.length > 0 ? containsAllergens : ['none']
-        });
+        };
+
+        if (selectedProduct) {
+            // EDIT FLOW
+            setUpdating(true);
+            setSubmitError(null);
+            const selectedId = selectedProduct.id || selectedProduct._id;
+
+            try {
+                const { data } = await axios.put(`/api/products/${selectedId}`, payload);
+
+                // Update the state list locally [4]
+                setListings(prev => prev.map(p => {
+                    const pid = p.id || p._id;
+                    if (pid === selectedId) {
+                        return data;
+                    }
+                    return p;
+                }));
+
+                handleClearSelection();
+            } catch (err) {
+                const errors = err.response?.data?.errors;
+                if (errors && Array.isArray(errors)) {
+                    setSubmitError(
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-800 text-sm space-y-1">
+                            {errors.map((e, idx) => (
+                                <p key={idx} className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-sm">error</span> {e.message}
+                                </p>
+                            ))}
+                        </div>
+                    );
+                } else {
+                    setSubmitError(
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-800 text-sm flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">error</span> Something went wrong.
+                        </div>
+                    );
+                }
+            } finally {
+                setUpdating(false);
+            }
+        } else {
+            // CREATE FLOW
+            await doRequest(payload);
+        }
     };
 
     return (
         <div className="bg-orange-50/50 min-h-screen text-zinc-800 antialiased font-sans selection:bg-lime-200">
-
             <main className="max-w-7xl mx-auto px-8 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     
                     {/* Left Column: Active Listings */}
                     <div className="lg:col-span-5 space-y-6">
                         <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-2xl font-bold font-headline text-zinc-800">Your Active Products</h2>
-                            <span className="bg-zinc-100 text-zinc-600 px-3 py-1 rounded-full text-xs font-bold">
+                            <h2 className="text-2xl font-bold font-headline text-zinc-800">Your Products</h2>
+                            <span className="bg-zinc-100 text-zinc-600 px-3 py-1 rounded-full text-xs font-bold select-none">
                                 {listings.length} {listings.length === 1 ? 'Item' : 'Items'}
                             </span>
                         </div>
                         
                         <div className="space-y-4">
                             {listings.length === 0 ? (
-                                <div className="bg-white rounded-3xl p-10 border border-zinc-100 shadow-sm text-center">
+                                <div className="bg-white rounded-3xl p-10 border border-zinc-100 shadow-sm text-center select-none">
                                     <span className="material-symbols-outlined text-zinc-300 text-5xl mb-3">inventory_2</span>
                                     <p className="text-zinc-500 font-medium text-sm">No products listed yet. Use the form to publish your first active listing.</p>
                                 </div>
                             ) : (
-                                listings.map((item) => (
-                                    <div key={item.id || item._id} className="bg-white rounded-3xl p-5 border border-zinc-100 shadow-sm hover:shadow-md transition-all group flex items-start gap-4 relative">
-                                        {item.verificationStatus === 'pending' && (
-                                            <div className="absolute top-4 right-4 flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider z-10">
-                                                <span className="material-symbols-outlined text-[14px]">schedule</span> Pending Approval
+                                listings.map((item) => {
+                                    const pid = item.id || item._id;
+                                    const isSelected = selectedProduct && (selectedProduct.id || selectedProduct._id) === pid;
+
+                                    return (
+                                        <div 
+                                            key={pid} 
+                                            onClick={() => handleSelectProduct(item)}
+                                            className={`bg-white rounded-3xl p-5 border shadow-sm hover:shadow-md transition-all group flex items-start gap-4 relative cursor-pointer ${
+                                                isSelected ? 'border-lime-500 ring-2 ring-lime-600/10' : 'border-zinc-100'
+                                            }`}
+                                        >
+                                            {/* Dynamic Status Badges [4] */}
+                                            {item.verificationStatus === 'approved' && (
+                                                <span className="absolute top-4 right-4 bg-lime-50 text-lime-700 border border-lime-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider select-none flex items-center gap-1 z-10">
+                                                    <span className="material-symbols-outlined text-[14px]">check_circle</span> Approved
+                                                </span>
+                                            )}
+                                            {item.verificationStatus === 'pending' && (
+                                                <span className="absolute top-4 right-4 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider select-none flex items-center gap-1 z-10">
+                                                    <span className="material-symbols-outlined text-[14px]">schedule</span> Pending
+                                                </span>
+                                            )}
+                                            {item.verificationStatus === 'rejected' && (
+                                                <span className="absolute top-4 right-4 bg-red-50 text-red-700 border border-red-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider select-none flex items-center gap-1 z-10">
+                                                    <span className="material-symbols-outlined text-[14px]">cancel</span> Rejected
+                                                </span>
+                                            )}
+
+                                            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-zinc-100 flex-shrink-0 relative border border-zinc-200">
+                                                <img 
+                                                    alt={item.title} 
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                    src={item.images?.[0] || "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300"}
+                                                />
                                             </div>
-                                        )}
-                                        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-zinc-100 flex-shrink-0 relative border border-zinc-200">
-                                            <img 
-                                                alt={item.title} 
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                                src={item.images?.[0] || "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300"}
-                                            />
+                                            <div className="flex-1 min-w-0 pr-24">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-bold text-zinc-800 text-lg truncate">{item.title}</h3>
+                                                </div>
+                                                <p className="text-lime-700 font-semibold mt-1">{item.priceDZD} DZD</p>
+                                                <div className="flex flex-wrap gap-2 mt-3">
+                                                    <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg flex items-center gap-1">
+                                                        <span className="material-symbols-outlined text-[14px] text-zinc-400">local_fire_department</span> 
+                                                        {item.calories} kcal
+                                                    </span>
+                                                    <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg">
+                                                        {item.proteinGrams}g P
+                                                    </span>
+                                                    <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg">
+                                                        {item.carbsGrams}g C
+                                                    </span>
+                                                    <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg">
+                                                        {item.fatGrams}g F
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0 pr-12">
-                                            <div className="flex justify-between items-start">
-                                                <h3 className="font-bold text-zinc-800 text-lg truncate">{item.title}</h3>
-                                            </div>
-                                            <p className="text-lime-700 font-semibold mt-1">{item.priceDZD} DZD</p>
-                                            <div className="flex flex-wrap gap-2 mt-3">
-                                                <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg flex items-center gap-1">
-                                                    <span className="material-symbols-outlined text-[14px] text-zinc-400">local_fire_department</span> 
-                                                    {item.calories} kcal
-                                                </span>
-                                                <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg">
-                                                    {item.proteinGrams}g P
-                                                </span>
-                                                <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg">
-                                                    {item.carbsGrams}g C
-                                                </span>
-                                                <span className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-semibold rounded-lg">
-                                                    {item.fatGrams}g F
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
 
-                    {/* Right Column: Listing Entry Form */}
+                    {/* Right Column: Listing Entry & Review Form [4] */}
                     <div className="lg:col-span-7">
                         <div className="bg-white rounded-3xl p-8 shadow-lg border border-zinc-100 relative overflow-hidden">
                             <div className="absolute -top-24 -right-24 w-64 h-64 bg-lime-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-                            <div className="mb-8 relative z-10">
-                                <h2 className="text-3xl font-bold font-headline text-zinc-800 mb-2">List a New Product</h2>
-                                <p className="text-zinc-500 font-medium text-sm">Add nutritional details to help our AI recommend your product.</p>
+                            
+                            <div className="flex justify-between items-start mb-8 relative z-10">
+                                <div>
+                                    <h2 className="text-3xl font-bold font-headline text-zinc-800 mb-2">
+                                        {selectedProduct ? "Review & Edit Product" : "List a New Product"}
+                                    </h2>
+                                    <p className="text-zinc-500 font-medium text-sm">
+                                        {selectedProduct ? "Modify your details. Any edit puts the listing back to pending review." : "Add nutritional details to help our AI recommend your product."}
+                                    </p>
+                                </div>
+                                
+                                {/* Cancel edit mode back trigger [4] */}
+                                {selectedProduct && (
+                                    <button 
+                                        type="button" 
+                                        onClick={handleClearSelection}
+                                        className="text-xs font-bold text-zinc-400 hover:text-zinc-700 flex items-center gap-1 focus:outline-none bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">close</span> Cancel &amp; List New
+                                    </button>
+                                )}
                             </div>
 
-                            <form onSubmit={onSubmit} className="space-y-6 relative z-10">
+                            {/* REJECTION REASON CARD (Renders only if status is rejected) [4] */}
+                            {selectedProduct && (
+                                <div className={`p-4 rounded-2xl border mb-6 flex flex-col gap-2 ${
+                                    selectedProduct.verificationStatus === 'approved'
+                                        ? 'bg-lime-50 border-lime-200 text-lime-800'
+                                        : selectedProduct.verificationStatus === 'pending'
+                                        ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                        : 'bg-red-50 border-red-200 text-red-800'
+                                }`}>
+                                    <div className="flex items-center gap-2 font-bold text-sm">
+                                        <span className="material-symbols-outlined">
+                                            {selectedProduct.verificationStatus === 'approved' ? 'check_circle' : selectedProduct.verificationStatus === 'pending' ? 'schedule' : 'cancel'}
+                                        </span>
+                                        <span className="uppercase tracking-wider">
+                                            Product Status: {selectedProduct.verificationStatus}
+                                        </span>
+                                    </div>
+                                    {selectedProduct.verificationStatus === 'rejected' && selectedProduct.rejectionReason && (
+                                        <div className="mt-2 text-xs leading-relaxed bg-white/50 p-3 rounded-xl border border-red-200/50">
+                                            <span className="font-bold text-red-900 block mb-1">Rejection Cause:</span>
+                                            {selectedProduct.rejectionReason}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleFormSubmit} className="space-y-6 relative z-10">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     
-                                    {/* Product Images Selector with removal controls */}
+                                    {/* Product Images Selector */}
                                     <div>
                                         <div 
                                             onClick={() => !isUploading && productImagesInputRef.current.click()}
@@ -309,7 +449,7 @@ export default function VendorProducts({ initialProducts, currentUser }) {
                                         )}
                                     </div>
 
-                                    {/* Nutrition Label Photo Selector with removal controls */}
+                                    {/* Nutrition Label Photo Selector */}
                                     <div>
                                         <div 
                                             onClick={() => !isUploading && nutritionImageInputRef.current.click()}
@@ -476,7 +616,7 @@ export default function VendorProducts({ initialProducts, currentUser }) {
 
                                 <hr className="border-zinc-100" />
 
-                                {/* Macro bento bento cells */}
+                                {/* Macro bento cells */}
                                 <div className="font-body">
                                     <label className="block text-sm font-bold text-zinc-700 mb-4 flex items-center gap-2">
                                         <span className="material-symbols-outlined text-lime-600 text-[20px]">nutrition</span>
@@ -571,7 +711,7 @@ export default function VendorProducts({ initialProducts, currentUser }) {
 
                                     </div>
                                     
-                                    {/* Macro-level warning aggregation descriptions */}
+                                    {/* Macro-level warning aggregation */}
                                     {(touchedFields.calories && !isCaloriesValid) ||
                                      (touchedFields.proteinGrams && !isProteinValid) ||
                                      (touchedFields.carbsGrams && !isCarbsValid) ||
@@ -607,16 +747,19 @@ export default function VendorProducts({ initialProducts, currentUser }) {
                                     </div>
                                 </div>
 
-                                {errors}
+                                {submitError || creationErrors}
 
                                 <div className="pt-4">
                                     {isFormValid && !isUploading ? (
                                         <button 
                                             type="submit"
+                                            disabled={updating}
                                             className="w-full bg-lime-600 hover:bg-lime-700 text-white py-4 rounded-2xl font-bold text-lg transition-all transform active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg shadow-lime-600/20 focus:outline-none font-headline"
                                         >
-                                            <span className="material-symbols-outlined">add_circle</span>
-                                            Publish Product
+                                            <span className="material-symbols-outlined">
+                                                {selectedProduct ? "save_as" : "add_circle"}
+                                            </span>
+                                            {selectedProduct ? (updating ? "Saving..." : "Save Product Details") : "Publish Product"}
                                         </button>
                                     ) : (
                                         <button 
@@ -624,8 +767,10 @@ export default function VendorProducts({ initialProducts, currentUser }) {
                                             disabled
                                             className="w-full bg-zinc-100 text-zinc-400 py-4 rounded-2xl font-bold text-lg cursor-not-allowed flex justify-center items-center gap-2 font-headline"
                                         >
-                                            <span className="material-symbols-outlined">add_circle</span>
-                                            {isUploading ? "Uploading Images..." : "Publish Product"}
+                                            <span className="material-symbols-outlined">
+                                                {selectedProduct ? "save_as" : "add_circle"}
+                                            </span>
+                                            {isUploading ? "Uploading Images..." : (selectedProduct ? "Save Product Details" : "Publish Product")}
                                         </button>
                                     )}
                                 </div>
@@ -641,10 +786,9 @@ export default function VendorProducts({ initialProducts, currentUser }) {
 
 VendorProducts.getInitialProps = async (context, client, currentUser) => {
     try {
-        const { data: initialProducts } = await client.get('/api/products');
-        const vendorSpecificProducts = initialProducts.filter(p => p.vendorId === currentUser?.id);
+        const { data: initialProducts } = await client.get('/api/products/my-products'); // Fetch vendor-specific directly [4]
         return { 
-            initialProducts: vendorSpecificProducts, 
+            initialProducts, 
             currentUser 
         };
     } catch (err) {

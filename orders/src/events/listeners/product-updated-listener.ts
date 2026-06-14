@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Message } from 'node-nats-streaming';
 import { Subjects, Listener, ProductUpdatedEvent } from '@d-ziet/common-lib';
 import { Product } from '../../models/product';
@@ -8,48 +9,41 @@ export class ProductUpdatedListener extends Listener<ProductUpdatedEvent> {
     queueGroupName = queueGroupName;
 
     async onMessage(data: ProductUpdatedEvent['data'], msg: Message) {
-        const { id, title, priceDZD, vendorId, verificationStatus, images } = data;
+        const { id, title, priceDZD, images, verificationStatus, version } = data;
         
         try {
-            // Find by version concurrency check
-            let product = await Product.findByEvent(data);
-            
-            if (!product) {
-                // Inspect if the product exists in the DB under ANY other version [2]
-                const existingProduct = await Product.findById(id);
-                
-                if (existingProduct) {
-                    // SCENARIO A: Product exists but version is out-of-order (e.g., received v2 before v1) [2].
-                    // We must NOT call msg.ack() so NATS redelivers once version sequence catches up.
-                    throw new Error(`Out-of-order event. DB version is ${existingProduct.version}, event version is ${data.version}`);
-                }
+            const existingProduct = await Product.findById(id);
 
-                // SCENARIO B: Product truly does not exist yet.
-                if (verificationStatus === 'approved') {
-                    product = Product.build({
-                        id,
-                        title,
-                        priceDZD,
-                        vendorId,
-                        images
-                    });
-                    await product.save();
-                    return msg.ack();
+            if (existingProduct) {
+                // Self-Healing check: Only apply modifications if the incoming event is newer 
+                if (version > existingProduct.version) {
+                    const objectId = new mongoose.Types.ObjectId(id); // Cast to raw ObjectId 
+                    
+                    // Executing raw MongoDB driver write to completely bypass Mongoose OCC 
+                    await Product.collection.updateOne(
+                        { _id: objectId },
+                        { $set: { title, priceDZD, images, version } }
+                    );
                 }
-
-                // If it doesn't exist and isn't approved, acknowledge and skip [2]
-                return msg.ack();
+                return msg.ack(); // Always acknowledge to prevent retries of older/duplicate messages
             }
 
-            // Normal sequential update flow [2]
-            product.set({ title, priceDZD, images });
-            await product.save();
+            // Create on-the-fly if approved and doesn't exist locally 
+            if (verificationStatus === 'approved') {
+                const product = Product.build({
+                    id,
+                    title,
+                    priceDZD,
+                    vendorId: data.vendorId,
+                    images
+                });
+                product.set({ version });
+                await product.save();
+            }
 
             msg.ack();
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            console.error("Error processing ProductUpdatedEvent:", message);
-            // If it's a version mismatch or database drop, we let NATS retry by NOT calling msg.ack() [2].
+        } catch (err: any) {
+            console.error("Orders Product Sync Error:", err.message);
         }
     }
 }

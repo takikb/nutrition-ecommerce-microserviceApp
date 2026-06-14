@@ -1,10 +1,10 @@
 import express, { Request, Response } from 'express'
-import { requireAuth } from '@d-ziet/common-lib'
+import { requireAuth, requireRole } from '@d-ziet/common-lib'
 import { Conversation } from '../models/conversation'
 
 const router = express.Router()
 
-router.get('/api/chat/conversations', requireAuth, async (req: Request, res: Response) => {
+router.get('/api/chat/conversations', requireAuth, requireRole(['vendor', 'customer']), async (req: Request, res: Response) => {
     const userId = req.currentUser!.id;
 
     const conversations = await Conversation.find({
